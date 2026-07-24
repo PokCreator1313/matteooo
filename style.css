@@ -244,6 +244,20 @@ tr.team-pick td:first-child { border-left: 3px solid var(--good); }
 .chain-remove { color: var(--bad); cursor: pointer; margin-left: 4px; font-weight: 700; }
 .chain-link { width: 16px; height: 2px; background: var(--border); flex: 0 0 auto; }
 
+.double-group { margin-bottom: 14px; }
+.double-group-label {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 12.5px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+.double-group-0 .double-group-label { background: rgba(108,140,255,0.25); color: var(--accent); }
+.double-group-1 .double-group-label { background: rgba(61,220,132,0.2); color: var(--good); }
+.double-group-0 .mon-card { border-left: 3px solid var(--accent); }
+.double-group-1 .mon-card { border-left: 3px solid var(--good); }
+
 .empty-hint { color: var(--muted); font-size: 13px; padding: 10px 0; }
 
 footer { color: var(--muted); font-size: 11px; margin-top: 24px; text-align: center; }

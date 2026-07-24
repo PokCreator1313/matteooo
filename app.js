@@ -98,9 +98,14 @@ function renderTrainer(t) {
       <div class="cnt">${c}</div>
     </div>`).join("");
 
-  const cards = monsWithTypes.map(m => {
+  // combats doubles : dresseurs séparés (ex: "X & Y [Double]") + owner par mon
+  const isDouble = / & .*\[Double\]/.test(t.name) && monsWithTypes.every(m => m.owner !== undefined);
+  const subNames = isDouble ? t.name.replace(" [Double]", "").split(" & ") : null;
+
+  function monCard(m) {
     const typesHtml = m.types ? m.types.map(typeBadge).join("") : `<span class="type-badge" style="background:#555">?</span>`;
-    return `<div class="mon-card">
+    const ownerClass = isDouble ? ` owner-${m.owner}` : "";
+    return `<div class="mon-card${ownerClass}">
       <div class="name">${m.species} <span class="lvl">Nv.${m.level ?? "?"}</span></div>
       <div class="types">${typesHtml}</div>
       ${m.item ? `<div class="field"><b>Objet:</b> ${m.item}</div>` : ""}
@@ -108,7 +113,20 @@ function renderTrainer(t) {
       ${m.nature ? `<div class="field"><b>Nature:</b> ${m.nature}</div>` : ""}
       ${m.moves && m.moves.length ? `<div class="field"><b>Capacités:</b><ul>${m.moves.map(mv=>`<li>${mv}</li>`).join("")}</ul></div>` : `<div class="field"><b>Capacités:</b> moveset de level-up par défaut (non personnalisé)</div>`}
     </div>`;
-  }).join("");
+  }
+
+  let cards;
+  if (isDouble) {
+    cards = subNames.map((sn, i) => {
+      const mons = monsWithTypes.filter(m => m.owner === i);
+      return `<div class="double-group double-group-${i}">
+        <div class="double-group-label">${sn}</div>
+        <div class="team-grid">${mons.map(monCard).join("")}</div>
+      </div>`;
+    }).join("");
+  } else {
+    cards = `<div class="team-grid">${monsWithTypes.map(monCard).join("")}</div>`;
+  }
 
   trainerView.innerHTML = `
     <div class="trainer-title">${t.name}</div>
@@ -116,7 +134,7 @@ function renderTrainer(t) {
     <h2 style="margin-top:4px">Types menaçants dans cette équipe</h2>
     <div class="threat-bars">${threatRows || '<div class="empty-hint">Types inconnus</div>'}</div>
     <h2 style="margin-top:16px">Équipe adverse</h2>
-    <div class="team-grid">${cards}</div>
+    ${cards}
   `;
 }
 
