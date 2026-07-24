@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Run &amp; Bun — Prépa Combat</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Run &amp; Bun — Prépa Combat</h1>
+  <p class="sub">Cherche un dresseur, consulte son équipe, indique tes Pokémon disponibles et récupère des suggestions basées sur les types.</p>
+
+  <div class="layout">
+    <div class="panel">
+      <h2>1. Choisir un combat</h2>
+      <input type="text" id="trainer-search" placeholder="Rechercher un dresseur (ex: Roxanne, Youngster Calvin, Route 110)...">
+      <div class="search-results" id="search-results"></div>
+      <div id="trainer-view" style="margin-top:16px">
+        <div class="empty-hint">Aucun combat sélectionné. Recherche un dresseur ci-dessus.</div>
+      </div>
+    </div>
+
+    <div class="panel panel-compact">
+      <h2>2. Tes Pokémon disponibles</h2>
+      <textarea id="roster-area" rows="4" list="dex-datalist" placeholder="Bulbizarre
+Salamèche
+Ponchiot
+..."></textarea>
+      <datalist id="dex-datalist"></datalist>
+      <div class="row" style="margin-top:6px">
+        <label for="roster-import" class="secondary" style="display:inline-block">
+          <button type="button" class="secondary" onclick="document.getElementById('roster-import').click()">Importer</button>
+        </label>
+        <input type="file" id="roster-import" accept=".txt,.json" style="display:none">
+        <button id="roster-export" class="secondary" type="button">Exporter</button>
+      </div>
+
+      <details style="margin-top:10px">
+        <summary>Ou coller l'export du script Lua</summary>
+        <p class="sub" style="margin:8px 0">Dans mGBA : Tools → Scripting → charge <code>runandbun.lua</code>, lance <code>export()</code>, puis colle ici le contenu de la fenêtre "Showdown Export".</p>
+        <textarea id="lua-paste" rows="4" placeholder="Bulbasaur @ Leftovers
+Ability: Overgrow
+Level: 15
+Timid Nature
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Tackle
+- Growl
+
+Charmander @ ..."></textarea>
+        <div class="row" style="margin-top:6px">
+          <button id="lua-import" type="button">Importer ces Pokémon</button>
+        </div>
+        <div id="lua-import-status" class="sub"></div>
+      </details>
+
+      <details open style="margin-top:10px">
+        <summary>Ton équipe pour ce combat</summary>
+        <div id="team-select-view" style="margin-top:8px">
+          <div class="empty-hint">Renseigne ton roster ci-dessus.</div>
+        </div>
+      </details>
+    </div>
+
+    <div class="panel">
+      <h2>3. Face à face</h2>
+      <div id="faceoff-view">
+        <div class="empty-hint">Choisis un combat et sélectionne ton équipe.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Données extraites de Dresseurs.xlsx (équipes IA) et générées via PokeAPI (types). Outil local, aucune donnée envoyée en ligne.</footer>
+
+  <script src="data.js"></script>
+  <script src="typechart.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
