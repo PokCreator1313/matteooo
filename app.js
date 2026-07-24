@@ -106,7 +106,7 @@ function renderTrainer(t) {
       ${m.item ? `<div class="field"><b>Objet:</b> ${m.item}</div>` : ""}
       ${m.ability ? `<div class="field"><b>Talent:</b> ${m.ability}</div>` : ""}
       ${m.nature ? `<div class="field"><b>Nature:</b> ${m.nature}</div>` : ""}
-      ${m.moves && m.moves.length ? `<div class="field"><b>Capacités:</b><ul>${m.moves.map(mv=>`<li>${mv}</li>`).join("")}</ul></div>` : ""}
+      ${m.moves && m.moves.length ? `<div class="field"><b>Capacités:</b><ul>${m.moves.map(mv=>`<li>${mv}</li>`).join("")}</ul></div>` : `<div class="field"><b>Capacités:</b> moveset de level-up par défaut (non personnalisé)</div>`}
     </div>`;
   }).join("");
 
