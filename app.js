@@ -203,7 +203,10 @@ function renderTeamSelect() {
     const checked = selectedTeam.has(name) ? "checked" : "";
     return `<label class="team-check-item">
       <input type="checkbox" class="team-member-select" data-name="${name}" ${checked}>
-      <span>${name}</span> ${typesHtml}
+      <div class="team-check-info">
+        <div class="name">${name}</div>
+        <div class="types">${typesHtml}</div>
+      </div>
     </label>`;
   }).join("");
 
@@ -374,3 +377,16 @@ document.getElementById("lua-import").addEventListener("click", () => {
 
 renderTeamSelect();
 renderFaceoff();
+
+// ---------- 4. Bloc-notes ----------
+const notesArea = document.getElementById("notes-area");
+const NOTES_KEY = "rnb_notes_v1";
+function loadNotes() {
+  const saved = localStorage.getItem(NOTES_KEY);
+  if (saved !== null) notesArea.value = saved;
+}
+function saveNotes() {
+  localStorage.setItem(NOTES_KEY, notesArea.value);
+}
+loadNotes();
+notesArea.addEventListener("input", saveNotes);

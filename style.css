@@ -173,7 +173,7 @@ tr.team-pick td:first-child { border-left: 3px solid var(--good); }
 }
 .team-check-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   background: var(--panel-2);
   border: 1px solid var(--border);
@@ -182,7 +182,10 @@ tr.team-pick td:first-child { border-left: 3px solid var(--good); }
   font-size: 12.5px;
   cursor: pointer;
 }
-.team-check-item input { flex: 0 0 auto; }
+.team-check-item input { flex: 0 0 auto; margin-top: 2px; }
+.team-check-info { min-width: 0; flex: 1 1 auto; }
+.team-check-info .name { overflow-wrap: anywhere; }
+.team-check-info .types { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
 
 .faceoff-pill {
   cursor: pointer;
