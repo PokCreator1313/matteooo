@@ -1,0 +1,214 @@
+.calc-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+@media (max-width: 980px) {
+  .calc-layout { grid-template-columns: 1fr; }
+}
+
+/* Resserre les panels/inputs génériques, mais uniquement dans le calculateur
+   (ne touche pas .panel/.row de la page 1, qui utilisent style.css tel quel). */
+.calc-layout .panel { padding: 11px 13px; }
+.calc-layout h2 { font-size: 14px; margin-bottom: 8px; }
+.calc-layout .row { gap: 6px; }
+.calc-layout input[type="text"], .calc-layout select { padding: 5px 7px; font-size: 12.5px; }
+
+.calc-form { display: flex; flex-direction: column; gap: 7px; }
+.calc-field label { display: block; font-size: 10.5px; color: var(--muted); margin-bottom: 2px; }
+.calc-field { width: 100%; }
+
+.calc-species-input { font-size: 14px; font-weight: 700; padding: 5px 8px; }
+
+.calc-resolver-box {
+  background: var(--panel-2);
+  border: 1px solid var(--bad);
+  border-radius: 8px;
+  padding: 7px 9px;
+  margin-bottom: 7px;
+}
+.calc-resolver-box label { color: var(--text); font-size: 11.5px; margin-bottom: 4px; }
+.calc-resolver-box .row { align-items: center; }
+.calc-resolver-box input { flex: 1 1 auto; }
+
+.calc-stat-grid {
+  display: grid;
+  grid-template-columns: 24px 1fr 1fr 46px 1fr;
+  gap: 2px 4px;
+  align-items: center;
+  font-size: 10.5px;
+}
+.calc-stat-grid .stat-label { color: var(--muted); font-weight: 700; text-align: right; padding-right: 2px; }
+.calc-stat-grid .stat-head { color: var(--muted); text-align: center; font-size: 9.5px; }
+.calc-stat-grid input, .calc-stat-grid select { width: 100%; padding: 2px 3px; font-size: 10.5px; text-align: center; }
+.calc-stat-grid .stat-computed { text-align: center; font-weight: 700; color: var(--text); }
+
+.calc-checks { display: flex; flex-wrap: wrap; gap: 8px; font-size: 11px; margin-top: 2px; }
+.calc-checks label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+.calc-checks input { flex: 0 0 auto; }
+
+.calc-result { margin-top: 10px; }
+.calc-result-main {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 11px;
+  text-align: center;
+}
+.calc-result-range { font-size: 17px; font-weight: 800; margin-bottom: 1px; }
+.calc-result-pct { color: var(--muted); font-size: 11.5px; }
+.calc-result-ko { margin-top: 4px; font-size: 11px; }
+.calc-rolls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: 6px;
+  font-size: 9.5px;
+  color: var(--muted);
+}
+.calc-rolls span {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 3px;
+}
+.calc-notes {
+  margin-top: 7px;
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.calc-notes ul { margin: 3px 0 0; padding-left: 15px; }
+.calc-error { color: var(--bad); font-weight: 600; padding: 6px 0; }
+
+.calc-search-wrap { position: relative; margin-bottom: 7px; }
+
+.calc-trainer-team {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.calc-trainer-pill {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.calc-trainer-pill:hover { border-color: var(--accent); }
+.calc-trainer-pill.active { border-color: var(--accent); background: rgba(108,140,255,0.18); }
+.calc-trainer-pill .lvl { color: var(--muted); font-weight: 500; margin-left: 2px; }
+.calc-pill-sprite { width: 26px; height: 26px; object-fit: contain; display: block; }
+
+.calc-box-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+  margin-bottom: 3px;
+}
+.calc-box-tile {
+  cursor: pointer;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel-2);
+  border: 3px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+.calc-box-tile:hover { border-color: var(--accent); }
+.calc-box-tile.active { box-shadow: 0 0 0 3px var(--accent); }
+.calc-box-sprite { width: 50px; height: 50px; object-fit: contain; display: block; }
+.calc-box-tile .calc-box-nosprite { font-size: 11px; color: var(--muted); font-weight: 700; }
+.calc-box-legend { font-size: 10px; color: var(--muted); margin: 2px 0 7px; line-height: 1.4; }
+
+.calc-hp-row { display: flex; align-items: center; gap: 6px; }
+.calc-hp-row .calc-currenthp { width: 70px; flex: 0 0 auto; padding: 4px 6px; }
+.calc-hp-pct { font-size: 11px; font-weight: 700; color: var(--text); min-width: 28px; }
+.calc-hp-reset { padding: 3px 6px; font-size: 10.5px; }
+
+.calc-moveset { display: flex; flex-direction: column; gap: 4px; }
+.calc-move-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 3px 5px;
+  font-size: 11px;
+}
+.calc-move-row.active { border-color: var(--accent); background: rgba(108,140,255,0.1); }
+.calc-move-radio { display: flex; align-items: center; flex: 0 0 auto; cursor: pointer; }
+.calc-move-radio input { margin: 0; cursor: pointer; }
+.calc-move-inputs { display: flex; flex: 1 1 auto; gap: 4px; min-width: 0; }
+.calc-move-inputs input, .calc-move-inputs select { min-width: 0; padding: 4px 5px; font-size: 11px; }
+.calc-move-inputs .calc-slot-name { flex: 1 1 auto; }
+.calc-move-type { flex: 0 0 auto; display: flex; align-items: center; }
+.calc-move-type .type-badge { margin-right: 0; padding: 1px 6px; font-size: 9.5px; }
+.type-badge.calc-type-badge-empty { background: var(--panel); color: var(--muted); border: 1px solid var(--border); }
+.calc-move-resolve-btn {
+  flex: 0 0 auto;
+  min-width: 18px;
+  padding: 2px 5px;
+  font-size: 10px;
+  font-weight: 700;
+  border-color: var(--bad);
+  color: var(--bad);
+}
+.calc-slot-cat {
+  flex: 0 0 auto;
+  min-width: 34px;
+  text-align: center;
+  font-size: 9.5px;
+  font-weight: 700;
+  border-radius: 5px;
+  padding: 2px 4px;
+  border: 1px solid var(--border);
+}
+.calc-slot-cat-phys { background: rgba(255,92,108,0.18); color: #ff8c96; border-color: rgba(255,92,108,0.5); }
+.calc-slot-cat-spe { background: rgba(108,140,255,0.18); color: #93aaff; border-color: rgba(108,140,255,0.5); }
+.calc-slot-cat-statut { background: var(--panel); color: var(--muted); }
+.calc-slot-cat-empty { background: var(--panel); color: var(--muted); }
+.calc-slot-power {
+  flex: 0 0 auto;
+  min-width: 20px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 2px 4px;
+}
+.calc-slot-badge {
+  flex: 0 0 auto;
+  min-width: 58px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.calc-slot-badge.dim { color: var(--muted); font-weight: 500; }
+.calc-slot-badge.imm { color: var(--muted); border-color: var(--muted); }
+.calc-slot-badge.high { color: #e0a030; border-color: #e0a030; }
+.calc-slot-badge.ohko { color: var(--bad); border-color: var(--bad); }
+
+.calc-result-block { margin-bottom: 10px; }
+.calc-result-block:last-child { margin-bottom: 0; }
+.calc-result-dir { font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 4px; }

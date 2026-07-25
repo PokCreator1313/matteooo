@@ -7,8 +7,13 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Run &amp; Bun — Prépa Combat</h1>
-  <p class="sub">Cherche un dresseur, consulte son équipe, indique tes Pokémon disponibles et récupère des suggestions basées sur les types.</p>
+  <div class="row" style="justify-content:space-between;align-items:baseline">
+    <div>
+      <h1>Run &amp; Bun — Prépa Combat</h1>
+      <p class="sub">Cherche un dresseur, consulte son équipe, indique tes Pokémon disponibles et récupère des suggestions basées sur les types.</p>
+    </div>
+    <a href="calc.html" style="text-decoration:none"><button type="button">Calculateur de dégâts →</button></a>
+  </div>
 
   <div class="layout">
     <div class="panel">
@@ -78,6 +83,8 @@ Charmander @ ..."></textarea>
 
   <script src="data.js"></script>
   <script src="typechart.js"></script>
+  <script src="calc-data.js"></script>
+  <script src="translate.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

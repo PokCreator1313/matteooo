@@ -114,7 +114,8 @@ button:hover { filter: brightness(1.1); }
   padding: 10px 12px;
   font-size: 12.5px;
 }
-.mon-card .name { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+.mon-card .name { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+.mon-sprite { width: 28px; height: 28px; object-fit: contain; flex: 0 0 auto; image-rendering: -webkit-optimize-contrast; }
 .mon-card .lvl { color: var(--muted); }
 .mon-card .types { margin: 6px 0; }
 .mon-card .field { margin-top: 4px; }
@@ -183,6 +184,7 @@ tr.team-pick td:first-child { border-left: 3px solid var(--good); }
   cursor: pointer;
 }
 .team-check-item input { flex: 0 0 auto; margin-top: 2px; }
+.team-check-sprite { width: 36px; height: 36px; object-fit: contain; flex: 0 0 auto; }
 .team-check-info { min-width: 0; flex: 1 1 auto; }
 .team-check-info .name { overflow-wrap: anywhere; }
 .team-check-info .types { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }

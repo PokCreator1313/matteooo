@@ -71,11 +71,21 @@ let selectedTeam = new Set();
 let chain = []; // suite ordonnée de tours : { oppIdx, teammate }
 let activeChainIndex = null; // index du tour actuellement affiché en détail
 
+// ---------- Liaison avec le calculateur (calc.html) ----------
+const TRAINER_LINK_KEY = "rnb_selected_trainer_idx";
+const TEAM_LINK_KEY = "rnb_selected_team_v1";
+
+function saveTeamLink() {
+  localStorage.setItem(TEAM_LINK_KEY, JSON.stringify([...selectedTeam]));
+}
+
 function selectTrainer(idx) {
   currentTrainer = TRAINERS[idx];
   selectedTeam = new Set();
   chain = [];
   activeChainIndex = null;
+  localStorage.setItem(TRAINER_LINK_KEY, String(idx));
+  saveTeamLink();
   renderTrainer(currentTrainer);
   renderTeamSelect();
   renderFaceoff();
@@ -105,8 +115,10 @@ function renderTrainer(t) {
   function monCard(m) {
     const typesHtml = m.types ? m.types.map(typeBadge).join("") : `<span class="type-badge" style="background:#555">?</span>`;
     const ownerClass = isDouble ? ` owner-${m.owner}` : "";
+    const resolvedSpecies = findSpeciesByLooseName(m.species);
+    const spriteUrl = resolvedSpecies ? getSpeciesSpriteUrl(resolvedSpecies) : null;
     return `<div class="mon-card${ownerClass}">
-      <div class="name">${m.species} <span class="lvl">Nv.${m.level ?? "?"}</span></div>
+      <div class="name">${spriteUrl ? `<img class="mon-sprite" src="${spriteUrl}" alt="${m.species}" loading="lazy">` : ""}${m.species} <span class="lvl">Nv.${m.level ?? "?"}</span></div>
       <div class="types">${typesHtml}</div>
       ${m.item ? `<div class="field"><b>Objet:</b> ${m.item}</div>` : ""}
       ${m.ability ? `<div class="field"><b>Talent:</b> ${m.ability}</div>` : ""}
@@ -219,8 +231,11 @@ function renderTeamSelect() {
     const types = resolveTypes(name);
     const typesHtml = types ? types.map(typeBadge).join("") : `<span class="type-badge" style="background:#555">?</span>`;
     const checked = selectedTeam.has(name) ? "checked" : "";
+    const resolvedSpecies = findSpeciesByLooseName(name);
+    const spriteUrl = resolvedSpecies ? getSpeciesSpriteUrl(resolvedSpecies) : null;
     return `<label class="team-check-item">
       <input type="checkbox" class="team-member-select" data-name="${name}" ${checked}>
+      ${spriteUrl ? `<img class="team-check-sprite" src="${spriteUrl}" alt="${name}" loading="lazy">` : ""}
       <div class="team-check-info">
         <div class="name">${name}</div>
         <div class="types">${typesHtml}</div>
@@ -235,6 +250,7 @@ teamSelectView.addEventListener("change", (e) => {
   const cb = e.target.closest(".team-member-select");
   if (!cb) return;
   if (cb.checked) selectedTeam.add(cb.dataset.name); else selectedTeam.delete(cb.dataset.name);
+  saveTeamLink();
   renderFaceoff();
 });
 
@@ -358,38 +374,93 @@ faceoffView.addEventListener("change", (e) => {
 });
 
 // ---------- Import depuis l'export Lua (format Showdown) ----------
+const STAT_KEY_ALIASES = { hp: "hp", atk: "atk", def: "def", spa: "spa", spd: "spd", spe: "spe" };
+function normStatKey(s) { return STAT_KEY_ALIASES[(s || "").toLowerCase()] || null; }
+
 function parseShowdownExport(text) {
   const blocks = text.split(/\r?\n\s*\r?\n/).map(b => b.trim()).filter(Boolean);
-  const species = [];
+  const mons = [];
   for (const block of blocks) {
-    const firstLine = block.split(/\r?\n/)[0].trim();
-    if (!firstLine) continue;
-    // "Nom @ Objet" ou juste "Nom" ; on ignore les lignes qui ne sont pas un nom de Pokémon
-    if (/^(Ability|Level|IVs|EVs|-|Shiny)/i.test(firstLine)) continue;
-    const name = firstLine.split(" @ ")[0].trim();
-    if (name) species.push(name);
+    const lines = block.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (!lines.length) continue;
+    let head = lines[0];
+    if (/^(Ability|Level|IVs|EVs|-|Shiny)/i.test(head)) continue;
+
+    let item = "";
+    const atIdx = head.indexOf(" @ ");
+    if (atIdx !== -1) { item = head.slice(atIdx + 3).trim(); head = head.slice(0, atIdx).trim(); }
+    // "Surnom (Espèce)" ou juste "Espèce"
+    const nickMatch = head.match(/\(([^)]+)\)/);
+    const rawSpecies = (nickMatch ? nickMatch[1] : head.replace(/\s*\(.*\)\s*/, "")).trim();
+    if (!rawSpecies) continue;
+    // Traduction EN->FR automatique (voir translate.js) : accepte aussi bien un nom
+    // français déjà correct qu'un nom anglais issu d'un export Showdown classique.
+    const species = findSpeciesByLooseName(rawSpecies) || rawSpecies;
+
+    const mon = {
+      species, item, level: 100, nature: "", ability: "", moves: [],
+      evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+      ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
+    };
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      let m;
+      if ((m = line.match(/^Ability:\s*(.+)$/i))) { mon.ability = m[1].trim(); continue; }
+      if ((m = line.match(/^Level:\s*(\d+)$/i))) { mon.level = Math.max(1, Math.min(100, parseInt(m[1], 10) || 100)); continue; }
+      if ((m = line.match(/^EVs:\s*(.+)$/i))) {
+        m[1].split("/").forEach(part => {
+          const pm = part.trim().match(/^(\d+)\s+(HP|Atk|Def|SpA|SpD|Spe)$/i);
+          const key = pm && normStatKey(pm[2]);
+          if (key) mon.evs[key] = parseInt(pm[1], 10);
+        });
+        continue;
+      }
+      if ((m = line.match(/^IVs:\s*(.+)$/i))) {
+        m[1].split("/").forEach(part => {
+          const pm = part.trim().match(/^(\d+)\s+(HP|Atk|Def|SpA|SpD|Spe)$/i);
+          const key = pm && normStatKey(pm[2]);
+          if (key) mon.ivs[key] = parseInt(pm[1], 10);
+        });
+        continue;
+      }
+      if ((m = line.match(/^([A-Za-zÀ-ÿ]+)\s+Nature$/i))) { mon.nature = m[1].trim(); continue; }
+      if ((m = line.match(/^-\s*(.+)$/))) {
+        if (mon.moves.length < 4) {
+          const rawMove = m[1].trim();
+          mon.moves.push(findMoveByLooseName(rawMove) || rawMove);
+        }
+        continue;
+      }
+    }
+    mons.push(mon);
   }
-  return species;
+  return mons;
+}
+
+const ROSTER_FULL_KEY = "rnb_roster_full_v1";
+function saveRosterFull(mons) {
+  localStorage.setItem(ROSTER_FULL_KEY, JSON.stringify(mons));
 }
 
 document.getElementById("lua-import").addEventListener("click", () => {
   const text = document.getElementById("lua-paste").value;
   const statusEl = document.getElementById("lua-import-status");
-  const names = parseShowdownExport(text);
-  if (!names.length) {
+  const mons = parseShowdownExport(text);
+  if (!mons.length) {
     statusEl.textContent = "Aucun Pokémon détecté dans le texte collé.";
     return;
   }
-  const resolved = [];
   const unknown = [];
-  for (const n of names) {
-    if (getTypes(n)) resolved.push(n); else unknown.push(n);
+  for (const m of mons) {
+    if (!getTypes(m.species)) unknown.push(m.species);
   }
-  rosterArea.value = names.join("\n");
+  rosterArea.value = mons.map(m => m.species).join("\n");
   saveRoster();
+  saveRosterFull(mons);
   renderTeamSelect();
   renderFaceoff();
-  statusEl.textContent = `${names.length} Pokémon importés dans ton roster` +
+  statusEl.textContent = `${mons.length} Pokémon importés dans ton roster (niveau, nature, objet, capacités inclus)` +
     (unknown.length ? ` (non reconnus : ${unknown.join(", ")})` : ".");
 });
 

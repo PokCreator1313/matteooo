@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Run &amp; Bun — Calculateur de dégâts</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="calc.css">
+</head>
+<body>
+  <div class="row" style="justify-content:space-between;align-items:baseline">
+    <div>
+      <h1>Run &amp; Bun — Calculateur de dégâts</h1>
+      <p class="sub">Calcule les dégâts min/max d'une capacité entre deux Pokémon, avec stats, talents, objets et conditions de terrain.</p>
+    </div>
+    <a href="index.html" class="secondary" style="text-decoration:none"><button type="button" class="secondary">← Prépa combat</button></a>
+  </div>
+
+  <div class="calc-layout">
+    <div class="panel calc-side" id="attacker-panel">
+      <h2>Attaquant</h2>
+      <div id="calc-my-team" class="calc-trainer-team"></div>
+      <div class="calc-field">
+        <label>Ma Box (roster complet) — clique un sprite pour le charger comme attaquant</label>
+        <div id="calc-my-box" class="calc-box-grid"></div>
+        <div class="calc-box-legend">
+          Bordure bleue = plus rapide que le défenseur · violette = vitesse égale.
+          Fond vert = tu OHKO le défenseur (clair = possible, plein = garanti) · fond orange/rouge = tu te fais OHKO (orange = possible, rouge = garanti).
+          La couleur OHKO nécessite un défenseur sélectionné et un moveset connu pour ce Pokémon (import via le script Lua) ; sans ça, seule la bordure de vitesse (si l'espèce est connue) s'affiche.
+        </div>
+      </div>
+      <div class="calc-field" id="team-pick-wrap">
+        <label>Choisir depuis mon équipe (roster)</label>
+        <select id="team-pick-select"><option value="">— sélectionner —</option></select>
+      </div>
+      <div id="calc-species-resolver"></div>
+      <div class="calc-form" id="attacker-form"></div>
+      <div class="calc-field">
+        <label>Moveset</label>
+        <div id="attacker-moveset"></div>
+      </div>
+    </div>
+
+    <div class="panel calc-mid">
+      <h2>Terrain</h2>
+      <div class="calc-form" id="field-form"></div>
+
+      <div class="calc-result" id="calc-result">
+        <div class="empty-hint">Renseigne un attaquant, un défenseur et un moveset des deux côtés.</div>
+      </div>
+    </div>
+
+    <div class="panel calc-side" id="defender-panel">
+      <h2>Défenseur</h2>
+      <div class="calc-field calc-search-wrap">
+        <label>Choisir un dresseur adverse</label>
+        <input type="text" id="calc-trainer-search" placeholder="Rechercher un dresseur...">
+        <div class="search-results" id="calc-trainer-results"></div>
+      </div>
+      <div id="calc-trainer-team" class="calc-trainer-team"></div>
+      <div class="calc-form" id="defender-form"></div>
+      <div class="calc-field">
+        <label>Moveset (rempli auto. depuis les données du dresseur)</label>
+        <div id="defender-moveset"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Données extraites du code source Run &amp; Bun (dekzeh/runandbundex) et de PokeAPI. Outil local, aucune donnée envoyée en ligne. Certains talents/objets de niche ne sont pas modélisés.</footer>
+
+  <datalist id="calc-species-list"></datalist>
+  <datalist id="calc-move-list"></datalist>
+  <datalist id="calc-item-list"></datalist>
+
+  <script src="data.js"></script>
+  <script src="typechart.js"></script>
+  <script src="calc-data.js"></script>
+  <script src="translate.js"></script>
+  <script src="calc-engine.js"></script>
+  <script src="calc.js"></script>
+</body>
+</html>
