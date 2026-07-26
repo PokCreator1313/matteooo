@@ -906,12 +906,38 @@ function ohkoColorFor(status, aggressive) {
   return null;
 }
 
-function tileBackground(atkStatus, defStatus) {
+// Cas où ni l'un ni l'autre ne OHKO : on regarde la "tankiness" (inspiré de
+// la légende de couleurs du Teambuilder Pokémon Showdown) :
+// - "hardCounter" : le Pokémon de la box encaisse large (4HKO minimum même au
+//   pire tirage du défenseur) ET menace sérieusement en retour (2HKO au pire
+//   tirage). C'est un vrai counter, pas juste un mur passif.
+// - "wall" : encaisse large mais ne menace pas beaucoup en retour.
+// Nécessite un moveset connu des deux côtés, sinon pas de couleur (comme pour
+// classifyOhko).
+function classifyStalemate(atkBest, defBest) {
+  if (!defBest) return null;
+  const tanky = defBest.maxPct <= 25; // survit à au moins 4 coups, même au pire tirage
+  if (!tanky) return null;
+  const threatens = !!atkBest && atkBest.maxPct >= 50; // menace un 2HKO au pire tirage
+  return threatens ? "hardCounter" : "wall";
+}
+
+// Vert-bleu (Okabe-Ito), teinte distincte du couple bleu/orange déjà utilisé
+// pour les OHKO, tout en restant distinguable pour tous les daltonismes.
+function stalemateColor(kind) {
+  if (kind === "hardCounter") return "#009E73";
+  if (kind === "wall") return "#7FCBB4";
+  return null;
+}
+
+function tileBackground(atkStatus, defStatus, stalemateKind) {
   const c1 = ohkoColorFor(atkStatus, true);
   const c2 = ohkoColorFor(defStatus, false);
   if (c1 && c2) return `linear-gradient(135deg, ${c1} 50%, ${c2} 50%)`;
   if (c1) return c1;
   if (c2) return c2;
+  const sc = stalemateColor(stalemateKind);
+  if (sc) return sc;
   return null;
 }
 
@@ -950,12 +976,15 @@ function renderMyBoxGrid() {
       const defBest = defMoveNames.length ? bestMoveVs(defMonForCalc, defMoveNames, mon) : null;
       const atkStatus = classifyOhko(atkBest);
       const defStatus = classifyOhko(defBest);
-      bg = tileBackground(atkStatus, defStatus);
+      const stalemateKind = (atkStatus === "no" && defStatus === "no") ? classifyStalemate(atkBest, defBest) : null;
+      bg = tileBackground(atkStatus, defStatus, stalemateKind);
 
       if (atkStatus === "always") titleParts.push("OHKO garanti sur le défenseur");
       else if (atkStatus === "maybe") titleParts.push("OHKO possible sur le défenseur");
       if (defStatus === "always") titleParts.push("Se fait OHKO garanti");
       else if (defStatus === "maybe") titleParts.push("Se fait OHKO possible");
+      if (stalemateKind === "hardCounter") titleParts.push("Counter solide (encaisse large, menace sérieusement en retour)");
+      else if (stalemateKind === "wall") titleParts.push("Mur (encaisse large, ne menace pas beaucoup en retour)");
       if (!moves.length) titleParts.push("Moveset inconnu (import Lua requis pour la couleur OHKO)");
     } else if (!resolved) {
       titleParts.push("non reconnu dans la base du calculateur");
