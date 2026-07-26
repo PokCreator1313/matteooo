@@ -136,6 +136,11 @@
 .calc-box-sprite { width: 50px; height: 50px; object-fit: contain; display: block; }
 .calc-box-tile .calc-box-nosprite { font-size: 11px; color: var(--muted); font-weight: 700; }
 .calc-box-legend { font-size: 10px; color: var(--muted); margin: 2px 0 7px; line-height: 1.4; }
+.calc-box-legend summary { cursor: pointer; font-weight: 700; color: var(--text); list-style: none; }
+.calc-box-legend summary::-webkit-details-marker { display: none; }
+.calc-box-legend summary::before { content: "▶ "; display: inline-block; font-size: 8px; }
+.calc-box-legend[open] summary::before { content: "▼ "; }
+.calc-box-legend-body { margin-top: 4px; }
 
 .calc-hp-row { display: flex; align-items: center; gap: 6px; }
 .calc-hp-row .calc-currenthp { width: 70px; flex: 0 0 auto; padding: 4px 6px; }
