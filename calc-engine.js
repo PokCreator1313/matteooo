@@ -249,6 +249,49 @@ const DIRECT_DAMAGE_MECHANIC = {
   "Glaciation": { type: "ohko" },
 };
 
+// ------------------------------------------------------------------
+// Capacités à coups multiples : le jeu inflige plusieurs coups en une seule
+// utilisation (chacun avec son propre roll 85%-100%), ce que le calculateur
+// ignorait entièrement jusqu'ici (dégâts sous-évalués). Trois catégories :
+// - variable "standard" (2-5 coups, proba 35/35/15/15%, Multi-Coups/Skill
+//   Link garantit 5 coups) ;
+// - fixe (toujours le même nombre de coups, Multi-Coups sans effet) ;
+// - "ramp" (Triple Pied/Triple Axel : toujours 3 coups, puissance croissante
+//   x1/x2/x3 à chaque coup). Vérifié via les mécaniques officielles (Bulbapedia).
+// ------------------------------------------------------------------
+const MULTI_HIT_MOVES = {
+  "Furie": { min: 2, max: 5 },
+  "Dard-Nuée": { min: 2, max: 5 },
+  "Balle Graine": { min: 2, max: 5 },
+  "Stalactite": { min: 2, max: 5 },
+  "Charge Os": { min: 2, max: 5 },
+  "Torgnoles": { min: 2, max: 5 },
+  "Poing Comète": { min: 2, max: 5 },
+  "Combo-Griffe": { min: 2, max: 5 },
+  "Picanon": { min: 2, max: 5 },
+  "Pilonnage": { min: 2, max: 5 },
+  "Plumo-Queue": { min: 2, max: 5 },
+  "Boule Roc": { min: 2, max: 5 },
+  "Sheauriken": { min: 2, max: 5 },
+  "Rafale Écailles": { min: 2, max: 5 },
+  // Nombre de coups très variable (1 à 10) et mécanique de continuation
+  // différente des autres coups multiples : approximé ici, Multi-Coups
+  // n'a officiellement aucun effet dessus.
+  "Prolifération": { min: 1, max: 10, noSkillLink: true },
+  // Toujours exactement N coups (Multi-Coups sans effet)
+  "Double Pied": { min: 2, max: 2, fixed: true },
+  "Osmerang": { min: 2, max: 2, fixed: true },
+  "Double Baffe": { min: 2, max: 2, fixed: true },
+  "Double Volée": { min: 2, max: 2, fixed: true },
+  "Lancécrou": { min: 2, max: 2, fixed: true },
+  "Double Dard": { min: 2, max: 2, fixed: true },
+  // Toujours 3 coups + coup critique garanti
+  "Torrent de Coups": { min: 3, max: 3, fixed: true, forceCrit: true },
+  // Puissance croissante (x1/x2/x3) sur 3 coups fixes
+  "Triple Pied": { ramp: [1, 2, 3] },
+  "Triple Axel": { ramp: [1, 2, 3] },
+};
+
 function powerByWeightTarget(kg) {
   if (kg == null) return null;
   if (kg < 10) return 20;
@@ -730,7 +773,10 @@ function computeDamage(opts) {
 
   // Dégâts de base
   const level = attacker.level;
-  let base = Math.floor(Math.floor(Math.floor(2 * level / 5 + 2) * move.power * atkStat / defStat) / 50) + 2;
+  function baseDamageFor(power) {
+    return Math.floor(Math.floor(Math.floor(2 * level / 5 + 2) * power * atkStat / defStat) / 50) + 2;
+  }
+  let base = baseDamageFor(move.power);
 
   let mult = 1;
 
@@ -859,11 +905,49 @@ function computeDamage(opts) {
     if (gemType && gemType === move.type) { mult *= 1.3; notes.push(`${atkItem} (+30%, type ${gemType}, consommée après usage).`); }
   }
 
+  // Coups multiples (Poing Furie, Sheauriken, Double Pied, Triple Pied, etc.) :
+  // une seule utilisation de la capacité inflige plusieurs coups, chacun avec
+  // son propre roll 85%-100% — dégâts totaux, pas un seul coup.
+  const multiHit = MULTI_HIT_MOVES[move.name];
+  let hitsMin = 1, hitsMax = 1;
+  if (multiHit) {
+    if (multiHit.ramp) {
+      hitsMin = hitsMax = multiHit.ramp.length;
+      notes.push(`Coups multiples (${hitsMax} coups, puissance croissante) : dégâts totaux ci-dessous.`);
+    } else if (multiHit.fixed) {
+      hitsMin = hitsMax = multiHit.min;
+      notes.push(`Coups multiples (toujours ${hitsMax} coups) : dégâts totaux ci-dessous.`);
+    } else {
+      hitsMin = multiHit.min;
+      hitsMax = multiHit.max;
+      if (atkAbilityId === "SKILL_LINK" && !multiHit.noSkillLink) {
+        hitsMin = hitsMax = multiHit.max;
+        notes.push(`Multi-Coups : toujours ${hitsMax} coups.`);
+      } else {
+        notes.push(`Coups multiples (${hitsMin} à ${hitsMax} coups selon la chance) : dégâts totaux ci-dessous.`);
+      }
+    }
+    if (multiHit.forceCrit && !field.crit) {
+      critMult = (atkAbilityId === "SNIPER") ? 2.25 : 1.5;
+      notes.push(`${move.name} : coup critique garanti.`);
+    }
+  }
+
   // Roll aléatoire 85%-100% (16 valeurs, comme en jeu)
   const rolls = [];
   for (let n = 0; n <= 15; n++) {
     const randPct = (85 + n) / 100;
-    let dmg = Math.floor(base * critMult * randPct * stab * mult);
+    let dmg;
+    if (multiHit && multiHit.ramp) {
+      dmg = 0;
+      for (const rampMult of multiHit.ramp) {
+        dmg += Math.floor(baseDamageFor(move.power * rampMult) * critMult * randPct * stab * mult);
+      }
+    } else {
+      const perHit = Math.floor(base * critMult * randPct * stab * mult);
+      const hits = hitsMin === hitsMax ? hitsMin : Math.round(hitsMin + (hitsMax - hitsMin) * n / 15);
+      dmg = perHit * hits;
+    }
     if (dmg < 1) dmg = 1;
     rolls.push(dmg);
   }
