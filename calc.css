@@ -132,6 +132,10 @@
   flex: 0 0 auto;
 }
 .calc-box-tile:hover { border-color: var(--accent); }
+/* Ring de sélection (attaquant actuellement chargé) : même bleu que le
+   Damage Calc officiel de Showdown, qui utilise aussi un anneau bleu pour
+   le Pokémon actuellement chargé dans sa Box (indépendant du vert/rouge
+   du matchup). */
 .calc-box-tile.active { box-shadow: 0 0 0 3px var(--accent); }
 .calc-box-sprite { width: 50px; height: 50px; object-fit: contain; display: block; }
 .calc-box-tile .calc-box-nosprite { font-size: 11px; color: var(--muted); font-weight: 700; }

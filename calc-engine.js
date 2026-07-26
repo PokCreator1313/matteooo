@@ -811,10 +811,12 @@ function computeDamage(opts) {
 
   const min = Math.min(...rolls);
   const max = Math.max(...rolls);
-  const minPct = Math.min(100, +(100 * min / defHp).toFixed(1));
-  const maxPct = Math.min(100, +(100 * max / defHp).toFixed(1));
-  const minPctCurrent = Math.min(100, +(100 * min / defCurrentHp).toFixed(1));
-  const maxPctCurrent = Math.min(100, +(100 * max / defCurrentHp).toFixed(1));
+  // Pas de plafond à 100% : on veut voir l'overkill exact (comme sur Showdown),
+  // ex. 246.1-295.3% quand le coup dépasse largement les PV de la cible.
+  const minPct = +(100 * min / defHp).toFixed(1);
+  const maxPct = +(100 * max / defHp).toFixed(1);
+  const minPctCurrent = +(100 * min / defCurrentHp).toFixed(1);
+  const maxPctCurrent = +(100 * max / defCurrentHp).toFixed(1);
   const hitsToKo = max > 0 ? Math.ceil(defCurrentHp / max) : Infinity;
   const hitsToKoMin = min > 0 ? Math.ceil(defCurrentHp / min) : Infinity;
   let koNow = max >= defCurrentHp;

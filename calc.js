@@ -908,17 +908,20 @@ function ohkoColorFor(status, aggressive) {
 // "Hard Counter" / "Walls" (légende Showdown, texte exact) :
 // "Hard Counter (Gets 4HKO'd at worst and may OHKO)"
 // "Walls (Gets 4HKO'd at worst and does more damage)"
-// -> le Pokémon de la box encaisse large (survit à au moins 4 coups même au
-// pire tirage du défenseur, defBest.maxPct <= 25) ET ne se fait jamais OHKO
-// (defStatus "no"). Si en plus il a une chance de OHKO en face (atkStatus
-// "maybe"), c'est un "Hard Counter" ; sinon (atkStatus "no") c'est un "Wall".
-// Un "Always OHKOs" garanti reste vert peu importe la tankiness (priorité
-// gérée dans tileBackground).
+// -> le Pokémon de la box encaisse large ET ne se fait jamais OHKO (defStatus
+// "no"). "4HKO'd at worst" veut dire qu'un 3HKO n'est jamais possible, même
+// au pire tirage : 3 coups au max ne doivent pas suffire, donc
+// defBest.maxPct doit rester < 100/3 (~33.3%), pas <= 25 (ça, c'est la borne
+// d'un 4HKO garanti pile, trop strict). "may OHKO" couvre aussi bien une
+// chance de OHKO qu'un OHKO garanti : Hard Counter est le meilleur statut
+// possible (encaisse tout ET tue en face, certain ou non) donc il prime sur
+// le simple "Always OHKOs" vert. Si l'attaquant n'a aucune chance de OHKO
+// (atkStatus "no"), c'est un "Wall".
 function stalemateColor(atkStatus, defStatus, defBest) {
-  if (atkStatus === "always" || defStatus !== "no") return null;
-  const tanky = !!defBest && defBest.maxPct <= 25;
+  if (defStatus !== "no") return null;
+  const tanky = !!defBest && defBest.maxPct * 3 < 100;
   if (!tanky) return null;
-  return atkStatus === "maybe" ? "#1295ED" /* Hard Counter */ : "#0E0BF1" /* Walls */;
+  return (atkStatus === "maybe" || atkStatus === "always") ? "#1295ED" /* Hard Counter */ : "#0E0BF1" /* Walls */;
 }
 
 function tileBackground(atkStatus, defStatus, defBest) {
@@ -970,8 +973,8 @@ function renderMyBoxGrid() {
       else if (atkStatus === "maybe") titleParts.push("OHKO possible sur le défenseur");
       if (defStatus === "always") titleParts.push("Se fait OHKO garanti");
       else if (defStatus === "maybe") titleParts.push("Se fait OHKO possible");
-      const tanky = defStatus === "no" && !!defBest && defBest.maxPct <= 25;
-      if (tanky && atkStatus === "maybe") titleParts.push("Hard Counter (encaisse large, peut OHKO en retour)");
+      const tanky = defStatus === "no" && !!defBest && defBest.maxPct * 3 < 100;
+      if (tanky && (atkStatus === "maybe" || atkStatus === "always")) titleParts.push("Hard Counter (encaisse large, OHKO en retour)");
       else if (tanky && atkStatus === "no") titleParts.push("Wall (encaisse large, ne OHKO pas en retour)");
       if (!moves.length) titleParts.push("Moveset inconnu (import Lua requis pour la couleur OHKO)");
     } else if (!resolved) {
