@@ -896,13 +896,12 @@ function classifyOhko(best) {
   return "no";
 }
 
-// aggressive=true : c'est le Pokémon de la box qui OHKO (teintes bleues).
-// aggressive=false : c'est le Pokémon de la box qui se fait OHKO (teintes orange).
-// Palette bleu/orange (Okabe-Ito) : distinguable pour tous les types de
-// daltonisme, contrairement à un contraste vert/rouge classique.
+// aggressive=true : c'est le Pokémon de la box qui OHKO.
+// aggressive=false : c'est le Pokémon de la box qui se fait OHKO.
+// Couleurs reprises exactement de la légende fournie (Teambuilder Showdown).
 function ohkoColorFor(status, aggressive) {
-  if (status === "always") return aggressive ? "#0072B2" : "#D55E00";
-  if (status === "maybe") return aggressive ? "#56B4E9" : "#E69F00";
+  if (status === "always") return aggressive ? "#1ED508" : "#DC0D0C";
+  if (status === "maybe") return aggressive ? "#D9FF08" : "#FF7F17";
   return null;
 }
 
@@ -922,11 +921,10 @@ function classifyStalemate(atkBest, defBest) {
   return threatens ? "hardCounter" : "wall";
 }
 
-// Vert-bleu (Okabe-Ito), teinte distincte du couple bleu/orange déjà utilisé
-// pour les OHKO, tout en restant distinguable pour tous les daltonismes.
+// Couleurs reprises exactement de la légende fournie (Teambuilder Showdown).
 function stalemateColor(kind) {
-  if (kind === "hardCounter") return "#009E73";
-  if (kind === "wall") return "#7FCBB4";
+  if (kind === "hardCounter") return "#1295ED";
+  if (kind === "wall") return "#0E0BF1";
   return null;
 }
 
@@ -943,10 +941,9 @@ function tileBackground(atkStatus, defStatus, stalemateKind) {
 
 function speedBorderColor(atkSpe, defSpe) {
   if (atkSpe == null || defSpe == null) return null;
-  // Teintes très écartées (bleu vif / violet-magenta vif) pour rester
-  // distinguables même en cas de daltonisme.
-  if (atkSpe > defSpe) return "#2979FF"; // outspeed
-  if (atkSpe === defSpe) return "#C400FF"; // égalité
+  // Couleurs reprises exactement de la légende fournie (Teambuilder Showdown).
+  if (atkSpe > defSpe) return "#7EE4FF"; // outspeed
+  if (atkSpe === defSpe) return "#894197"; // égalité
   return null; // plus lent : pas de bordure particulière
 }
 
