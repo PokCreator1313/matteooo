@@ -18,6 +18,9 @@
 .calc-form { display: flex; flex-direction: column; gap: 7px; }
 .calc-field label { display: block; font-size: 10.5px; color: var(--muted); margin-bottom: 2px; }
 .calc-field { width: 100%; }
+.calc-nature-row { display: flex; align-items: center; gap: 5px; }
+.calc-nature-row select { flex: 1 1 auto; }
+.calc-nature-fx { color: var(--accent); font-weight: 700; font-size: 10.5px; white-space: nowrap; flex: 0 0 auto; }
 
 .calc-species-input { font-size: 14px; font-weight: 700; padding: 5px 8px; }
 .calc-mon-types { display: flex; gap: 4px; margin-top: 4px; }

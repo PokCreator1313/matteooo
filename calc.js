@@ -132,6 +132,12 @@ function attackerDefenderFor(ms) {
 
 const STAT_LABELS = { hp: "PV", atk: "Atk", def: "Déf", spa: "AtkS", spd: "DéfS", spe: "Vit" };
 
+function natureEffectText(natureFr) {
+  const nat = natureFr && CALC_NATURES[natureFr];
+  if (!nat || nat.inc === nat.dec) return "";
+  return `+${STAT_LABELS[nat.inc]} / -${STAT_LABELS[nat.dec]}`;
+}
+
 function abilityOptionsForSpecies(speciesName, currentVal) {
   const resolved = findSpeciesByLooseName(speciesName);
   const sp = resolved ? CALC_SPECIES[resolved] : null;
@@ -203,7 +209,10 @@ function updateHpPct(side) {
 function renderMonForm(mon, side, panelExtras) {
   const el = document.getElementById(`${side === "attacker" ? "attacker" : "defender"}-form`);
   const stats = getResolvedStats(mon);
-  const natureOpts = `<option value="">Neutre</option>` + NATURE_NAMES.map(n => `<option value="${n}" ${n === mon.nature ? "selected" : ""}>${n}</option>`).join("");
+  const natureOpts = `<option value="">Neutre</option>` + NATURE_NAMES.map(n => {
+    const fx = natureEffectText(n);
+    return `<option value="${n}" ${n === mon.nature ? "selected" : ""}>${n}${fx ? ` (${fx})` : ""}</option>`;
+  }).join("");
   const resolvedSp = findSpeciesByLooseName(mon.species);
   const spTypes = resolvedSp && CALC_SPECIES[resolvedSp] ? CALC_SPECIES[resolvedSp].types : [];
   const typesRow = spTypes.length
@@ -224,7 +233,10 @@ function renderMonForm(mon, side, panelExtras) {
       </div>
       <div class="calc-field">
         <label>Nature</label>
-        <select class="calc-nature" data-side="${side}">${natureOpts}</select>
+        <div class="calc-nature-row">
+          <select class="calc-nature" data-side="${side}">${natureOpts}</select>
+          <span class="calc-nature-fx" id="nature-fx-${side}">${natureEffectText(mon.nature)}</span>
+        </div>
       </div>
     </div>
     <div class="row">
@@ -643,6 +655,8 @@ document.addEventListener("change", (e) => {
     state[t.dataset.side].nature = t.value;
     refreshStatCells(t.dataset.side);
     updateHpPct(t.dataset.side);
+    const fxEl = document.getElementById(`nature-fx-${t.dataset.side}`);
+    if (fxEl) fxEl.textContent = natureEffectText(t.value);
     updateAllSlotBadges();
     renderResult();
     return;
