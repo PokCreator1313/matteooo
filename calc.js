@@ -905,37 +905,28 @@ function ohkoColorFor(status, aggressive) {
   return null;
 }
 
-// Cas où ni l'un ni l'autre ne OHKO : on regarde la "tankiness" (inspiré de
-// la légende de couleurs du Teambuilder Pokémon Showdown) :
-// - "hardCounter" : le Pokémon de la box encaisse large (4HKO minimum même au
-//   pire tirage du défenseur) ET menace sérieusement en retour (2HKO au pire
-//   tirage). C'est un vrai counter, pas juste un mur passif.
-// - "wall" : encaisse large mais ne menace pas beaucoup en retour.
-// Nécessite un moveset connu des deux côtés, sinon pas de couleur (comme pour
-// classifyOhko).
-function classifyStalemate(atkBest, defBest) {
-  if (!defBest) return null;
-  const tanky = defBest.maxPct <= 25; // survit à au moins 4 coups, même au pire tirage
+// "Hard Counter" / "Walls" (légende Showdown, texte exact) :
+// "Hard Counter (Gets 4HKO'd at worst and may OHKO)"
+// "Walls (Gets 4HKO'd at worst and does more damage)"
+// -> le Pokémon de la box encaisse large (survit à au moins 4 coups même au
+// pire tirage du défenseur, defBest.maxPct <= 25) ET ne se fait jamais OHKO
+// (defStatus "no"). Si en plus il a une chance de OHKO en face (atkStatus
+// "maybe"), c'est un "Hard Counter" ; sinon (atkStatus "no") c'est un "Wall".
+// Un "Always OHKOs" garanti reste vert peu importe la tankiness (priorité
+// gérée dans tileBackground).
+function stalemateColor(atkStatus, defStatus, defBest) {
+  if (atkStatus === "always" || defStatus !== "no") return null;
+  const tanky = !!defBest && defBest.maxPct <= 25;
   if (!tanky) return null;
-  const threatens = !!atkBest && atkBest.maxPct >= 50; // menace un 2HKO au pire tirage
-  return threatens ? "hardCounter" : "wall";
+  return atkStatus === "maybe" ? "#1295ED" /* Hard Counter */ : "#0E0BF1" /* Walls */;
 }
 
-// Couleurs reprises exactement de la légende fournie (Teambuilder Showdown).
-function stalemateColor(kind) {
-  if (kind === "hardCounter") return "#1295ED";
-  if (kind === "wall") return "#0E0BF1";
-  return null;
-}
-
-function tileBackground(atkStatus, defStatus, stalemateKind) {
-  const c1 = ohkoColorFor(atkStatus, true);
+function tileBackground(atkStatus, defStatus, defBest) {
+  const c1 = stalemateColor(atkStatus, defStatus, defBest) || ohkoColorFor(atkStatus, true);
   const c2 = ohkoColorFor(defStatus, false);
   if (c1 && c2) return `linear-gradient(135deg, ${c1} 50%, ${c2} 50%)`;
   if (c1) return c1;
   if (c2) return c2;
-  const sc = stalemateColor(stalemateKind);
-  if (sc) return sc;
   return null;
 }
 
@@ -973,15 +964,15 @@ function renderMyBoxGrid() {
       const defBest = defMoveNames.length ? bestMoveVs(defMonForCalc, defMoveNames, mon) : null;
       const atkStatus = classifyOhko(atkBest);
       const defStatus = classifyOhko(defBest);
-      const stalemateKind = (atkStatus === "no" && defStatus === "no") ? classifyStalemate(atkBest, defBest) : null;
-      bg = tileBackground(atkStatus, defStatus, stalemateKind);
+      bg = tileBackground(atkStatus, defStatus, defBest);
 
       if (atkStatus === "always") titleParts.push("OHKO garanti sur le défenseur");
       else if (atkStatus === "maybe") titleParts.push("OHKO possible sur le défenseur");
       if (defStatus === "always") titleParts.push("Se fait OHKO garanti");
       else if (defStatus === "maybe") titleParts.push("Se fait OHKO possible");
-      if (stalemateKind === "hardCounter") titleParts.push("Counter solide (encaisse large, menace sérieusement en retour)");
-      else if (stalemateKind === "wall") titleParts.push("Mur (encaisse large, ne menace pas beaucoup en retour)");
+      const tanky = defStatus === "no" && !!defBest && defBest.maxPct <= 25;
+      if (tanky && atkStatus === "maybe") titleParts.push("Hard Counter (encaisse large, peut OHKO en retour)");
+      else if (tanky && atkStatus === "no") titleParts.push("Wall (encaisse large, ne OHKO pas en retour)");
       if (!moves.length) titleParts.push("Moveset inconnu (import Lua requis pour la couleur OHKO)");
     } else if (!resolved) {
       titleParts.push("non reconnu dans la base du calculateur");
