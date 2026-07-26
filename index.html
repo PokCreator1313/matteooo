@@ -16,34 +16,49 @@
   </div>
 
   <div class="layout">
-    <div class="panel">
-      <h2>1. Choisir un combat</h2>
-      <input type="text" id="trainer-search" placeholder="Rechercher un dresseur (ex: Roxanne, Youngster Calvin, Route 110)...">
-      <div class="search-results" id="search-results"></div>
-      <div id="trainer-view" style="margin-top:16px">
-        <div class="empty-hint">Aucun combat sélectionné. Recherche un dresseur ci-dessus.</div>
+    <div class="layout-col layout-col-main">
+      <div class="panel">
+        <h2>1. Choisir un combat</h2>
+        <input type="text" id="trainer-search" placeholder="Rechercher un dresseur (ex: Roxanne, Youngster Calvin, Route 110)...">
+        <div class="search-results" id="search-results"></div>
+        <div class="row" id="trainer-nav" style="margin-top:8px;display:none">
+          <button type="button" class="secondary" id="trainer-home" title="Premier combat" style="flex:0 0 auto">🏠</button>
+          <button type="button" class="secondary" id="trainer-prev">← Combat précédent</button>
+          <button type="button" class="secondary" id="trainer-next">Combat suivant →</button>
+        </div>
+        <div id="trainer-view" style="margin-top:16px">
+          <div class="empty-hint">Aucun combat sélectionné. Recherche un dresseur ci-dessus.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>3. Face à face</h2>
+        <div id="faceoff-view">
+          <div class="empty-hint">Choisis un combat et sélectionne ton équipe.</div>
+        </div>
       </div>
     </div>
 
-    <div class="panel panel-compact">
-      <h2>2. Tes Pokémon disponibles</h2>
-      <textarea id="roster-area" rows="4" list="dex-datalist" placeholder="Bulbizarre
+    <div class="layout-col layout-col-side">
+      <div class="panel panel-compact">
+        <h2>2. Tes Pokémon disponibles</h2>
+        <textarea id="roster-area" rows="4" list="dex-datalist" placeholder="Bulbizarre
 Salamèche
 Ponchiot
 ..."></textarea>
-      <datalist id="dex-datalist"></datalist>
-      <div class="row" style="margin-top:6px">
-        <label for="roster-import" class="secondary" style="display:inline-block">
-          <button type="button" class="secondary" onclick="document.getElementById('roster-import').click()">Importer</button>
-        </label>
-        <input type="file" id="roster-import" accept=".txt,.json" style="display:none">
-        <button id="roster-export" class="secondary" type="button">Exporter</button>
-      </div>
+        <datalist id="dex-datalist"></datalist>
+        <div class="row" style="margin-top:6px">
+          <label for="roster-import" class="secondary" style="display:inline-block">
+            <button type="button" class="secondary" onclick="document.getElementById('roster-import').click()">Importer</button>
+          </label>
+          <input type="file" id="roster-import" accept=".txt,.json" style="display:none">
+          <button id="roster-export" class="secondary" type="button">Exporter</button>
+        </div>
 
-      <details style="margin-top:10px">
-        <summary>Ou coller l'export du script Lua</summary>
-        <p class="sub" style="margin:8px 0">Dans mGBA : Tools → Scripting → charge <code>runandbun.lua</code>, lance <code>export()</code>, puis colle ici le contenu de la fenêtre "Showdown Export".</p>
-        <textarea id="lua-paste" rows="4" placeholder="Bulbasaur @ Leftovers
+        <details style="margin-top:10px">
+          <summary>Ou coller l'export du script Lua</summary>
+          <p class="sub" style="margin:8px 0">Dans mGBA : Tools → Scripting → charge <code>runandbun.lua</code>, lance <code>export()</code>, puis colle ici le contenu de la fenêtre "Showdown Export".</p>
+          <textarea id="lua-paste" rows="4" placeholder="Bulbasaur @ Leftovers
 Ability: Overgrow
 Level: 15
 Timid Nature
@@ -52,30 +67,24 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 - Growl
 
 Charmander @ ..."></textarea>
-        <div class="row" style="margin-top:6px">
-          <button id="lua-import" type="button">Importer ces Pokémon</button>
-        </div>
-        <div id="lua-import-status" class="sub"></div>
-      </details>
+          <div class="row" style="margin-top:6px">
+            <button id="lua-import" type="button">Importer ces Pokémon</button>
+          </div>
+          <div id="lua-import-status" class="sub"></div>
+        </details>
 
-      <details open style="margin-top:10px">
-        <summary>Ton équipe pour ce combat</summary>
-        <div id="team-select-view" style="margin-top:8px">
-          <div class="empty-hint">Renseigne ton roster ci-dessus.</div>
-        </div>
-      </details>
-    </div>
-
-    <div class="panel">
-      <h2>3. Face à face</h2>
-      <div id="faceoff-view">
-        <div class="empty-hint">Choisis un combat et sélectionne ton équipe.</div>
+        <details open style="margin-top:10px">
+          <summary>Ton équipe pour ce combat</summary>
+          <div id="team-select-view" style="margin-top:8px">
+            <div class="empty-hint">Renseigne ton roster ci-dessus.</div>
+          </div>
+        </details>
       </div>
-    </div>
 
-    <div class="panel">
-      <h2>4. Bloc-notes</h2>
-      <textarea id="notes-area" rows="6" placeholder="Note tes stratégies, ordres de combat, rappels..."></textarea>
+      <div class="panel">
+        <h2>4. Bloc-notes</h2>
+        <textarea id="notes-area" rows="6" placeholder="Note tes stratégies, ordres de combat, rappels..."></textarea>
+      </div>
     </div>
   </div>
 

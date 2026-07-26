@@ -57,7 +57,7 @@ function blankMon(extra) {
     species: "", level: 100, nature: "",
     ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
     evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
-    ability: "", item: "",
+    ability: "", abilityActive: true, item: "",
     stages: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
     status: "", // "" | brulure | paralysie | poison | poison_grave | sommeil | gel
     currentHp: null, // null = PV pleins (suit automatiquement le max)
@@ -224,7 +224,12 @@ function renderMonForm(mon, side, panelExtras) {
     <div class="row">
       <div class="calc-field">
         <label>Talent</label>
-        <select class="calc-ability" data-side="${side}">${abilityOptionsForSpecies(mon.species, mon.ability)}</select>
+        <div class="calc-ability-row">
+          <select class="calc-ability" data-side="${side}">${abilityOptionsForSpecies(mon.species, mon.ability)}</select>
+          <label class="calc-ability-toggle" title="Décoche si le talent n'est pas actif dans cette situation (ex : Intimidation déjà appliquée, talent annulé...)">
+            <input type="checkbox" class="calc-ability-active" data-side="${side}" ${mon.abilityActive !== false ? "checked" : ""}>
+          </label>
+        </div>
       </div>
       <div class="calc-field">
         <label>Objet</label>
@@ -636,7 +641,8 @@ document.addEventListener("change", (e) => {
     renderResult();
     return;
   }
-  if (t.classList.contains("calc-ability")) { state[t.dataset.side].ability = t.value; refreshStatCells(t.dataset.side); updateAllSlotBadges(); renderResult(); return; }
+  if (t.classList.contains("calc-ability")) { state[t.dataset.side].ability = t.value; state[t.dataset.side].abilityActive = true; refreshStatCells(t.dataset.side); updateAllSlotBadges(); renderResult(); return; }
+  if (t.classList.contains("calc-ability-active")) { state[t.dataset.side].abilityActive = t.checked; refreshStatCells(t.dataset.side); updateAllSlotBadges(); renderResult(); return; }
   if (t.classList.contains("calc-stage")) {
     const side = t.dataset.side, stat = t.dataset.stat;
     state[side].stages[stat] = parseInt(t.value, 10) || 0;
@@ -1036,14 +1042,49 @@ document.addEventListener("click", (e) => {
     trainerResultsEl.classList.remove("open");
   }
 });
+function selectTrainerByIdx(idx, fromSync) {
+  selectedTrainer = TRAINERS[idx];
+  selectedTrainerIdx = idx;
+  selectedTrainerMonIdx = null;
+  renderTrainerTeam();
+  renderTrainerNav();
+  if (!fromSync) {
+    // Propage le changement de combat à la page Prépa Combat (index.html) et
+    // réinitialise l'équipe choisie pour ce combat (nouvelle sélection requise).
+    localStorage.setItem(TRAINER_LINK_KEY, String(idx));
+    localStorage.setItem(TEAM_LINK_KEY, JSON.stringify([]));
+    renderMyTeamPills();
+  }
+}
+
 trainerResultsEl.addEventListener("click", (e) => {
   const item = e.target.closest(".search-item");
   if (!item || item.dataset.idx === undefined) return;
-  selectedTrainer = TRAINERS[parseInt(item.dataset.idx, 10)];
-  selectedTrainerMonIdx = null;
-  renderTrainerTeam();
+  selectTrainerByIdx(parseInt(item.dataset.idx, 10));
   trainerResultsEl.classList.remove("open");
   trainerSearchInput.value = "";
+});
+
+// ---------- Navigation combat précédent/suivant (ordre du fichier Dresseurs.xlsx) ----------
+let selectedTrainerIdx = null;
+const calcTrainerNavEl = document.getElementById("calc-trainer-nav");
+const calcTrainerHomeBtn = document.getElementById("calc-trainer-home");
+const calcTrainerPrevBtn = document.getElementById("calc-trainer-prev");
+const calcTrainerNextBtn = document.getElementById("calc-trainer-next");
+
+function renderTrainerNav() {
+  if (selectedTrainerIdx === null) { calcTrainerNavEl.style.display = "none"; return; }
+  calcTrainerNavEl.style.display = "flex";
+  calcTrainerPrevBtn.disabled = selectedTrainerIdx <= 0;
+  calcTrainerNextBtn.disabled = selectedTrainerIdx >= TRAINERS.length - 1;
+}
+
+calcTrainerHomeBtn.addEventListener("click", () => selectTrainerByIdx(0));
+calcTrainerPrevBtn.addEventListener("click", () => {
+  if (selectedTrainerIdx > 0) selectTrainerByIdx(selectedTrainerIdx - 1);
+});
+calcTrainerNextBtn.addEventListener("click", () => {
+  if (selectedTrainerIdx < TRAINERS.length - 1) selectTrainerByIdx(selectedTrainerIdx + 1);
 });
 trainerTeamEl.addEventListener("click", (e) => {
   const pill = e.target.closest(".calc-trainer-pill");
@@ -1058,12 +1099,13 @@ trainerTeamEl.addEventListener("click", (e) => {
 
 function loadTrainerLink() {
   const raw = localStorage.getItem(TRAINER_LINK_KEY);
-  if (raw === null) return;
-  const idx = parseInt(raw, 10);
-  if (Number.isNaN(idx) || !TRAINERS[idx]) return;
+  const parsed = raw !== null ? parseInt(raw, 10) : NaN;
+  const idx = (!Number.isNaN(parsed) && TRAINERS[parsed]) ? parsed : 0; // premier combat par défaut
   selectedTrainer = TRAINERS[idx];
+  selectedTrainerIdx = idx;
   selectedTrainerMonIdx = null;
   renderTrainerTeam();
+  renderTrainerNav();
 }
 
 // Synchro live si les deux pages sont ouvertes dans des onglets différents

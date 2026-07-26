@@ -79,34 +79,81 @@ function saveTeamLink() {
   localStorage.setItem(TEAM_LINK_KEY, JSON.stringify([...selectedTeam]));
 }
 
-function selectTrainer(idx) {
+function loadTeamFromLink() {
+  try {
+    const arr = JSON.parse(localStorage.getItem(TEAM_LINK_KEY) || "[]");
+    selectedTeam = new Set(arr);
+  } catch {
+    selectedTeam = new Set();
+  }
+}
+
+// Restaure le combat et l'équipe déjà choisis (ex: retour depuis calc.html) sans rien réinitialiser.
+function initTrainerFromLink() {
+  const raw = localStorage.getItem(TRAINER_LINK_KEY);
+  const parsed = raw !== null ? parseInt(raw, 10) : NaN;
+  const idx = (!Number.isNaN(parsed) && TRAINERS[parsed]) ? parsed : 0;
   currentTrainer = TRAINERS[idx];
+  currentTrainerIdx = idx;
+  loadTeamFromLink();
+  chain = [];
+  activeChainIndex = null;
+  renderTrainer(currentTrainer);
+  renderTeamSelect();
+  renderFaceoff();
+  renderTrainerNav();
+}
+
+function selectTrainer(idx, fromSync) {
+  currentTrainer = TRAINERS[idx];
+  currentTrainerIdx = idx;
   selectedTeam = new Set();
   chain = [];
   activeChainIndex = null;
-  localStorage.setItem(TRAINER_LINK_KEY, String(idx));
+  if (!fromSync) {
+    // Propage le changement de combat au calculateur (calc.html) et
+    // réinitialise l'équipe choisie pour ce combat (nouvelle sélection requise).
+    localStorage.setItem(TRAINER_LINK_KEY, String(idx));
+  }
   saveTeamLink();
   renderTrainer(currentTrainer);
   renderTeamSelect();
   renderFaceoff();
+  renderTrainerNav();
 }
+
+// Synchro live si calc.html (défenseur) change de combat dans un autre onglet
+window.addEventListener("storage", (e) => {
+  if (e.key === TRAINER_LINK_KEY) {
+    const idx = parseInt(e.newValue, 10);
+    if (!Number.isNaN(idx) && TRAINERS[idx]) selectTrainer(idx, true);
+  }
+});
+
+// ---------- Navigation combat précédent/suivant (ordre du fichier Dresseurs.xlsx) ----------
+let currentTrainerIdx = null;
+const trainerNavEl = document.getElementById("trainer-nav");
+const trainerHomeBtn = document.getElementById("trainer-home");
+const trainerPrevBtn = document.getElementById("trainer-prev");
+const trainerNextBtn = document.getElementById("trainer-next");
+
+function renderTrainerNav() {
+  if (currentTrainerIdx === null) { trainerNavEl.style.display = "none"; return; }
+  trainerNavEl.style.display = "flex";
+  trainerPrevBtn.disabled = currentTrainerIdx <= 0;
+  trainerNextBtn.disabled = currentTrainerIdx >= TRAINERS.length - 1;
+}
+
+trainerHomeBtn.addEventListener("click", () => selectTrainer(0));
+trainerPrevBtn.addEventListener("click", () => {
+  if (currentTrainerIdx > 0) selectTrainer(currentTrainerIdx - 1);
+});
+trainerNextBtn.addEventListener("click", () => {
+  if (currentTrainerIdx < TRAINERS.length - 1) selectTrainer(currentTrainerIdx + 1);
+});
 
 function renderTrainer(t) {
   const monsWithTypes = t.pokemon.map(p => ({ ...p, types: getTypes(p.species) }));
-
-  // agrégation des menaces : compte des types (STAB) présents dans l'équipe adverse
-  const threatCount = {};
-  for (const m of monsWithTypes) {
-    if (!m.types) continue;
-    for (const ty of m.types) threatCount[ty] = (threatCount[ty] || 0) + 1;
-  }
-  const maxThreat = Math.max(1, ...Object.values(threatCount));
-  const threatRows = Object.entries(threatCount).sort((a, b) => b[1] - a[1]).map(([ty, c]) => `
-    <div class="threat-row">
-      ${typeBadge(ty)}
-      <div class="bar-bg"><div class="bar-fill" style="width:${(c/maxThreat)*100}%;background:${TYPE_COLORS[ty]}"></div></div>
-      <div class="cnt">${c}</div>
-    </div>`).join("");
 
   // combats doubles : dresseurs séparés (ex: "X & Y [Double]") + owner par mon
   const isDouble = / & .*\[Double\]/.test(t.name) && monsWithTypes.every(m => m.owner !== undefined);
@@ -143,9 +190,7 @@ function renderTrainer(t) {
   trainerView.innerHTML = `
     <div class="trainer-title">${t.name}</div>
     <div class="trainer-meta">${t.chapter}${t.location ? " · " + t.location : ""} · ${t.pokemon.length} Pokémon</div>
-    <h2 style="margin-top:4px">Types menaçants dans cette équipe</h2>
-    <div class="threat-bars">${threatRows || '<div class="empty-hint">Types inconnus</div>'}</div>
-    <h2 style="margin-top:16px">Équipe adverse</h2>
+    <h2 style="margin-top:4px">Équipe adverse</h2>
     ${cards}
   `;
 }
@@ -464,8 +509,7 @@ document.getElementById("lua-import").addEventListener("click", () => {
     (unknown.length ? ` (non reconnus : ${unknown.join(", ")})` : ".");
 });
 
-renderTeamSelect();
-renderFaceoff();
+initTrainerFromLink(); // restaure le dernier combat + équipe choisie (pas de reset en changeant de page)
 
 // ---------- 4. Bloc-notes ----------
 const notesArea = document.getElementById("notes-area");

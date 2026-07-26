@@ -7,6 +7,30 @@
 
 const STAT_KEYS = ["hp", "atk", "def", "spa", "spd", "spe"];
 
+// Capacités qui touchent réellement les deux adversaires en combat double
+// ("all-opponents" / "all-other-pokemon" sur PokeAPI). Seules ces capacités
+// subissent le malus x0.75 en combat double — pas les capacités mono-cible.
+// Liste vérifiée via PokeAPI (move-target 9 et 11), noms FR = clés CALC_MOVES.
+const SPREAD_MOVES = new Set([
+  "Surf", "Séisme", "Destruction", "Explosion", "Ampleur", "Danse Folle",
+  "Coup d'Jus", "Ébullilave", "Cradovague", "Synchropeine", "Piétisol",
+  "Incendie", "Parabocharge", "Tempête Florale", "Bang Sonique",
+  "Aria de l'Écume", "Centrifugifle", "Caboche-Kaboum", "Explo-Brume",
+  "Gaz Corrosif", "Coupe-Vent", "Mimi-Queue", "Groz'Yeux", "Rugissement",
+  "Acide", "Blizzard", "Tranch'Herbe", "Sécrétion", "Météores", "Gaz Toxik",
+  "Écume", "Éboulement", "Spore Coton", "Poudreuse", "Vent Glace",
+  "Doux Parfum", "Ouragan", "Canicule", "Éruption", "Mégaphone",
+  "Tranch'Air", "Giclédo", "Ocroupi", "Anti-Soin", "Séduction", "Trou Noir",
+  "Calcination", "Survinsecte", "Toile Élek", "Chant Antique", "Ère Glaciaire",
+  "Aboiement", "Voix Enjôleuse", "Orage Adamantin", "Piège de Venin",
+  "Éclat Magique", "Myria-Flèches", "Myria-Vagues", "Force Chtonienne",
+  "Onde Originelle", "Lame Pangéenne", "Sanction Suprême", "Vibrécaille",
+  "Carapiège", "Pika-Splash", "Abattage", "Overdrive", "Feu Envieux",
+  "Draco-Énergie", "Fureur Ardente", "Lance de Glace", "Éclat Spectral",
+  "Typhon Passionné", "Typhon Hivernal", "Typhon Fulgurant", "Typhon Pyrosable",
+  "Toupie Éclat", "Ruée d'Or", "Pluie Térastrale",
+]);
+
 // Normalisation accents/casse (identique à norm() de app.js) — requise ici
 // car calc.html ne charge pas app.js, seulement calc-engine.js/calc.js.
 function norm(s) {
@@ -24,7 +48,60 @@ const TYPE_BOOST_ITEMS = {
   "SilverPowder": "Insecte", "Hard Stone": "Roche", "Spell Tag": "Spectre",
   "Dragon Fang": "Dragon", "Black Glasses": "Tenebres", "Metal Coat": "Acier",
   "Fairy Feather": "Fee", "Pixie Plate": "Fee", "Silk Scarf": "Normal",
+  "Dread Plate": "Tenebres",
 };
+
+// Objets à double type boosté (+20% sur deux types au lieu d'un). Orbe
+// Platiné (Griseous Orb) : Dragon ET Spectre, aucune restriction d'espèce
+// depuis la Gen 5. Noms EN (alignés sur CALC_ITEMS).
+const DUAL_TYPE_BOOST_ITEMS = {
+  "Griseous Orb": ["Dragon", "Spectre"],
+};
+
+// Graines de terrain : +1 palier Déf (Élek/Herbu) ou Déf. Spé (Brume/Psy)
+// pour le défenseur si le terrain correspondant est actif (consommées après
+// usage, on suppose ici qu'elles sont encore tenues). Noms EN (alignés sur
+// CALC_ITEMS).
+const TERRAIN_SEED_ITEMS = {
+  "Electric Seed": { terrain: "electrik", stat: "def" },
+  "Grassy Seed": { terrain: "herbu", stat: "def" },
+  "Misty Seed": { terrain: "brumeux", stat: "spd" },
+  "Psychic Seed": { terrain: "psy", stat: "spd" },
+};
+
+// Baies "résistance" : réduisent de 50% un coup super efficace du type
+// correspondant (consommées après usage — on suppose ici qu'elles sont
+// encore tenues au moment du calcul). Noms EN (alignés sur CALC_ITEMS).
+const RESIST_BERRIES = {
+  "Occa Berry": "Feu", "Passho Berry": "Eau", "Wacan Berry": "Electrik",
+  "Rindo Berry": "Plante", "Yache Berry": "Glace", "Chople Berry": "Combat",
+  "Kebia Berry": "Poison", "Shuca Berry": "Sol", "Coba Berry": "Vol",
+  "Payapa Berry": "Psy", "Tanga Berry": "Insecte", "Charti Berry": "Roche",
+  "Kasib Berry": "Spectre", "Haban Berry": "Dragon", "Colbur Berry": "Tenebres",
+  "Babiri Berry": "Acier", "Roseli Berry": "Fee",
+};
+
+// Gemmes : +30% de dégâts (une seule fois, consommées) si le type
+// correspond à celui de la capacité utilisée. Noms EN (alignés sur CALC_ITEMS).
+const GEM_ITEMS = {
+  "Normal Gem": "Normal", "Fighting Gem": "Combat", "Flying Gem": "Vol",
+  "Poison Gem": "Poison", "Ground Gem": "Sol", "Rock Gem": "Roche",
+  "Bug Gem": "Insecte", "Ghost Gem": "Spectre", "Steel Gem": "Acier",
+  "Fire Gem": "Feu", "Water Gem": "Eau", "Grass Gem": "Plante",
+  "Electric Gem": "Electrik", "Psychic Gem": "Psy", "Ice Gem": "Glace",
+  "Dragon Gem": "Dragon", "Dark Gem": "Tenebres", "Fairy Gem": "Fee",
+};
+
+// Baies boost de stat à PV bas (≤25% des PV max) : +1 palier Attaque/Att.
+// Spé au moment du coup (mécanique standard, consommées après usage).
+const STAT_BOOST_BERRIES = {
+  "Liechi Berry": "atk",
+  "Petaya Berry": "spa",
+};
+
+// Objets qui doublent une stat pour une espèce précise.
+const THICK_CLUB_SPECIES = new Set(["Osselait", "Ossatueur", "Ossatueur-Alola"]);
+const LIGHT_BALL_SPECIES = new Set(["Pikachu", "Pikachu-Gmax"]);
 
 function abilityIdByFrName(frName) {
   if (!frName) return null;
@@ -228,9 +305,14 @@ function sumPositiveStages(stages) {
   return STAT_KEYS.filter(k => k !== "hp").reduce((sum, k) => sum + Math.max(0, stages[k] || 0), 0);
 }
 
-// Renvoie true si le talent du défenseur annule le coup (immunité).
-function checkImmunity(moveType, defAbilityId, defTypes) {
+// Renvoie true si le talent/objet du défenseur annule le coup (immunité).
+// Balle Fer (Iron Ball) ancre le défenseur au sol : elle annule à la fois
+// l'immunité Sol de Lévitation et celle du type Vol (cette dernière est
+// gérée séparément, sur l'efficacité de type, voir plus bas dans computeDamage).
+function checkImmunity(moveType, defAbilityId, defTypes, defItemEn) {
   const t = moveType;
+  if (t === "Sol" && defItemEn === "Air Balloon") return true;
+  if (t === "Sol" && defItemEn === "Iron Ball") return false;
   if (defAbilityId === "LEVITATE" && t === "Sol") return true;
   if (defAbilityId === "WATER_ABSORB" && t === "Eau") return true;
   if (defAbilityId === "VOLT_ABSORB" && t === "Electrik") return true;
@@ -373,19 +455,35 @@ function computeDamage(opts) {
     return { error: "Capacité de statut (pas de dégâts directs)." };
   }
 
-  const atkAbilityId = abilityIdByFrName(attacker.ability);
-  const defAbilityId = abilityIdByFrName(defender.ability);
+  // abilityActive (case à cocher côté UI) permet de désactiver manuellement
+  // l'effet du talent quand il n'est pas actif dans la situation (ex :
+  // Intimidation déjà appliquée, talent supprimé/ignoré...). Par défaut
+  // (champ absent, ex : équipes de dresseurs) le talent est actif.
+  const atkAbilityId = attacker.abilityActive !== false ? abilityIdByFrName(attacker.ability) : null;
+  const defAbilityId = defender.abilityActive !== false ? abilityIdByFrName(defender.ability) : null;
   const atkItem = attacker.item || null;
   const defItem = defender.item || null;
+  // Les objets sont saisis/stockés en FR (clés de CALC_ITEMS) : on traduit en
+  // EN ici pour toutes les comparaisons (tables ci-dessus indexées en EN).
+  const atkItemEn = atkItem ? (CALC_ITEMS[atkItem] || atkItem) : null;
+  const defItemEn = defItem ? (CALC_ITEMS[defItem] || defItem) : null;
 
   const defTypes = defSpecies.types;
   const atkTypes = atkSpecies.types;
 
-  if (checkImmunity(move.type, defAbilityId, defTypes)) {
-    return { immune: true, rolls: [0], min: 0, max: 0, minPct: 0, maxPct: 0, notes: [`${abilityFrNameById(defAbilityId)} annule l'attaque.`] };
+  if (checkImmunity(move.type, defAbilityId, defTypes, defItemEn)) {
+    const reason = defItemEn === "Air Balloon" ? `${defItem} annule l'attaque (immunité Sol).` : `${abilityFrNameById(defAbilityId)} annule l'attaque.`;
+    return { immune: true, rolls: [0], min: 0, max: 0, minPct: 0, maxPct: 0, notes: [reason] };
   }
 
-  const effectiveness = typeMultiplier(move.type, defTypes);
+  let effectiveness = typeMultiplier(move.type, defTypes);
+  // Balle Fer (Iron Ball) : ancre le défenseur au sol, annule l'immunité Sol
+  // du type Vol (on recalcule l'efficacité sans la composante Vol).
+  if (move.type === "Sol" && defItemEn === "Iron Ball" && defTypes.includes("Vol")) {
+    const groundedTypes = defTypes.filter(t => t !== "Vol");
+    effectiveness = groundedTypes.length ? typeMultiplier(move.type, groundedTypes) : 1;
+    notes.push(`${defItem} : ancre le défenseur au sol (immunité Vol au Sol annulée).`);
+  }
   if (effectiveness === 0) {
     return { immune: true, rolls: [0], min: 0, max: 0, minPct: 0, maxPct: 0, notes: ["Immunité de type."] };
   }
@@ -465,9 +563,52 @@ function computeDamage(opts) {
   const atkStagesSource = atkUsesTargetAtk ? dstages : stages;
   let atkStage = atkStagesSource[atkStageKey] || 0;
   let defStage = dstages[defStageKey] || 0;
+
+  // Intimidation (côté défenseur) : abaisse l'Attaque (physique) de
+  // l'attaquant de 1 palier à l'entrée en combat du défenseur. Ne s'applique
+  // qu'à la propre stat d'Attaque de l'attaquant (pas Damoclès/Tricherie).
+  if (!atkUsesDef && !atkUsesTargetAtk && atkStageKey === "atk" && defAbilityId === "INTIMIDATE") {
+    if (atkAbilityId === "CLEAR_BODY" || atkAbilityId === "WHITE_SMOKE" || atkAbilityId === "HYPER_CUTTER") {
+      notes.push(`${abilityFrNameById(atkAbilityId)} bloque l'Intimidation.`);
+    } else if (atkAbilityId === "CONTRARY") {
+      atkStage += 1;
+      notes.push("Intimidation + Contestation (+1 Attaque au lieu de -1).");
+    } else if (atkAbilityId === "SIMPLE") {
+      atkStage -= 2;
+      notes.push("Intimidation + Simple (-2 Attaque).");
+    } else if (atkItemEn === "White Herb") {
+      notes.push(`${atkItem} annule la baisse d'Attaque due à l'Intimidation (objet consommé).`);
+    } else {
+      atkStage -= 1;
+      notes.push("Intimidation (-1 Attaque de l'attaquant).");
+    }
+  }
+
+  // Graines de terrain (côté défenseur) : +1 palier Déf/Déf. Spé si le
+  // terrain correspondant est actif (consommées après usage, on suppose ici
+  // qu'elles sont encore tenues).
+  const terrainSeed = defItemEn ? TERRAIN_SEED_ITEMS[defItemEn] : null;
+  if (terrainSeed && field.terrain === terrainSeed.terrain && defStageKey === terrainSeed.stat) {
+    defStage += 1;
+    notes.push(`${defItem} (+1 palier ${terrainSeed.stat === "def" ? "Défense" : "Défense Spéciale"}, terrain actif).`);
+  }
+
   if (critIgnoresDrop) {
     if (atkStage < 0) atkStage = 0;
     if (defStage > 0) defStage = 0;
+  }
+
+  // Baies boost de stat à PV bas (Baie Lichii/Pitaye) : +1 palier sur la
+  // stat offensive utilisée, si l'attaquant est à ≤25% de ses PV max
+  // (consommées après usage, on suppose ici qu'elles sont encore tenues).
+  if (!atkUsesDef && !atkUsesTargetAtk) {
+    const atkHpPctNow = 100 * atkCurrentHp / atkStats.hp;
+    const lowHpForBerry = attacker.currentHp != null ? atkHpPctNow <= 25 : !!attacker.lowHp;
+    const berryStatKey = atkItemEn ? STAT_BOOST_BERRIES[atkItemEn] : null;
+    if (lowHpForBerry && berryStatKey && berryStatKey === atkStageKey) {
+      atkStage += 1;
+      notes.push(`${atkItem} (+1 palier ${atkStageKey === "atk" ? "Attaque" : "Attaque Spéciale"}, PV ≤ 25%).`);
+    }
   }
 
   let atkStat = applyStage(atkStatsSource[atkStageKey], atkStage);
@@ -490,19 +631,33 @@ function computeDamage(opts) {
     atkStat = Math.floor(atkStat * 1.5);
     notes.push("Cran (+50% Attaque car statut).");
   }
+
+  // Objets qui doublent une stat pour une espèce précise (Masse Os,
+  // Ballelumière). S'applique uniquement quand la stat utilisée est bien
+  // celle propre à l'attaquant (pas Damoclès/Tricherie).
+  if (usesOwnOffensiveStat) {
+    if (atkStageKey === "atk" && atkItemEn === "Thick Club" && THICK_CLUB_SPECIES.has(attacker.species)) {
+      atkStat = atkStat * 2;
+      notes.push("Masse Os (+100% Attaque).");
+    }
+    if ((atkStageKey === "atk" || atkStageKey === "spa") && atkItemEn === "Light Ball" && LIGHT_BALL_SPECIES.has(attacker.species)) {
+      atkStat = atkStat * 2;
+      notes.push(`Ballelumière (+100% ${atkStageKey === "atk" ? "Attaque" : "Attaque Spéciale"}).`);
+    }
+  }
   if (usesOwnOffensiveStat && isPhysical && atkAbilityId === "GORILLA_TACTICS") {
     atkStat = Math.floor(atkStat * 1.5);
     notes.push("Tacticien (+50% Attaque).");
   }
 
   // Objets modifiant la stat défensive
-  if (defItem && norm(defItem) === norm("Eviolite") && defender.notFullyEvolved) {
+  if (defItemEn && norm(defItemEn) === norm("Eviolite") && defender.notFullyEvolved) {
     defStat = Math.floor(defStat * 1.5);
-    notes.push("Éviolite (+50% Déf/Déf.Spé, non complètement évolué).");
+    notes.push("Évoluroc (+50% Déf/Déf.Spé, non complètement évolué).");
   }
-  if (defItem && norm(defItem) === norm("Assault Vest") && defStageKey === "spd") {
+  if (defItemEn && norm(defItemEn) === norm("Assault Vest") && defStageKey === "spd") {
     defStat = Math.floor(defStat * 1.5);
-    notes.push("Veste Choix (+50% Défense Spéciale).");
+    notes.push("Veste de Combat (+50% Défense Spéciale).");
   }
 
   // Écaille Spéciale : +50% Déf/Déf.Spé si le défenseur a un statut
@@ -527,8 +682,12 @@ function computeDamage(opts) {
 
   let mult = 1;
 
-  // Cibles multiples
-  if (field.multiTarget) mult *= 0.75;
+  // Cibles multiples : seules les capacités qui touchent réellement les deux
+  // adversaires (capacités "spread") subissent le malus, pas toutes les capacités.
+  if (field.multiTarget && SPREAD_MOVES.has(move.name)) {
+    mult *= 0.75;
+    notes.push("Cible multiple (capacité qui touche les deux adversaires, -25%).");
+  }
 
   // Météo
   const w = field.weather;
@@ -590,6 +749,14 @@ function computeDamage(opts) {
     // déjà géré ci-dessus (couvre 0.5, 0.25...)
   }
 
+  // Baie résistance du défenseur : -50% si le coup est super efficace et
+  // correspond au type de la baie (consommée après usage, on suppose ici
+  // qu'elle est encore tenue au moment du calcul).
+  if (effectiveness > 1 && defItemEn && RESIST_BERRIES[defItemEn] === move.type) {
+    mult *= 0.5;
+    notes.push(`${defItem} (-50%, super efficace, type ${move.type}).`);
+  }
+
   // Multiscale / Shadow Shield
   if ((defAbilityId === "MULTISCALE" || defAbilityId === "SHADOW_SHIELD") && defender.fullHp) {
     mult *= 0.5;
@@ -616,17 +783,21 @@ function computeDamage(opts) {
     else if (!isPhysical && field.lightscreen) { mult *= 0.5; notes.push("Mur Lumière (-50% Spéciale)."); }
   }
 
-  // Objets offensifs
-  if (atkItem) {
-    const itemNorm = norm(atkItem);
-    if (itemNorm === norm("Choice Band") && isPhysical) { mult *= 1.5; notes.push("Bandeau Choix (+50%)."); }
-    if (itemNorm === norm("Choice Specs") && !isPhysical) { mult *= 1.5; notes.push("Lunettes Choix (+50%)."); }
-    if (itemNorm === norm("Life Orb")) { mult *= 1.3; notes.push("Orbe Vie (+30%)."); }
-    if (itemNorm === norm("Muscle Band") && isPhysical) { mult *= 1.1; notes.push("Bandeau Muscle (+10%)."); }
-    if (itemNorm === norm("Wise Glasses") && !isPhysical) { mult *= 1.1; notes.push("Lunettes Sages (+10%)."); }
-    if (itemNorm === norm("Expert Belt") && effectiveness > 1) { mult *= 1.2; notes.push("Ceinture Expert (+20%, super efficace)."); }
-    const boostType = TYPE_BOOST_ITEMS[atkItem];
+  // Objets offensifs (comparaisons faites sur le nom EN traduit depuis CALC_ITEMS)
+  if (atkItemEn) {
+    const itemNorm = norm(atkItemEn);
+    if (itemNorm === norm("Choice Band") && isPhysical) { mult *= 1.5; notes.push(`${atkItem} (+50% Attaque, capacité physique).`); }
+    if (itemNorm === norm("Choice Specs") && !isPhysical) { mult *= 1.5; notes.push(`${atkItem} (+50% Att. Spé, capacité spéciale).`); }
+    if (itemNorm === norm("Life Orb")) { mult *= 1.3; notes.push(`${atkItem} (+30%).`); }
+    if (itemNorm === norm("Muscle Band") && isPhysical) { mult *= 1.1; notes.push(`${atkItem} (+10%, capacité physique).`); }
+    if (itemNorm === norm("Wise Glasses") && !isPhysical) { mult *= 1.1; notes.push(`${atkItem} (+10%, capacité spéciale).`); }
+    if (itemNorm === norm("Expert Belt") && effectiveness > 1) { mult *= 1.2; notes.push(`${atkItem} (+20%, super efficace).`); }
+    const boostType = TYPE_BOOST_ITEMS[atkItemEn];
     if (boostType && boostType === move.type) { mult *= 1.2; notes.push(`${atkItem} (+20%, type ${boostType}).`); }
+    const dualBoostTypes = DUAL_TYPE_BOOST_ITEMS[atkItemEn];
+    if (dualBoostTypes && dualBoostTypes.includes(move.type)) { mult *= 1.2; notes.push(`${atkItem} (+20%, type ${move.type}).`); }
+    const gemType = GEM_ITEMS[atkItemEn];
+    if (gemType && gemType === move.type) { mult *= 1.3; notes.push(`${atkItem} (+30%, type ${gemType}, consommée après usage).`); }
   }
 
   // Roll aléatoire 85%-100% (16 valeurs, comme en jeu)
@@ -646,8 +817,18 @@ function computeDamage(opts) {
   const maxPctCurrent = Math.min(100, +(100 * max / defCurrentHp).toFixed(1));
   const hitsToKo = max > 0 ? Math.ceil(defCurrentHp / max) : Infinity;
   const hitsToKoMin = min > 0 ? Math.ceil(defCurrentHp / min) : Infinity;
-  const koNow = max >= defCurrentHp;
-  const koNowGuaranteed = min >= defCurrentHp;
+  let koNow = max >= defCurrentHp;
+  let koNowGuaranteed = min >= defCurrentHp;
+
+  // Ceinture Force (Focus Sash) / Solidrock (Sturdy) : à PV pleins, le
+  // défenseur survit toujours avec 1 PV face à un coup qui l'aurait K.O.
+  const survivorItem = defItemEn === "Focus Sash" ? defItem : null;
+  const survivorAbility = defAbilityId === "STURDY" ? abilityFrNameById(defAbilityId) : null;
+  if (defender.fullHp && defCurrentHp > 1 && (survivorItem || survivorAbility) && koNow) {
+    notes.push(`${survivorItem || survivorAbility} (PV pleins) : le défenseur survit avec 1 PV au lieu d'être K.O.`);
+    koNow = false;
+    koNowGuaranteed = false;
+  }
 
   return {
     rolls, min, max, minPct, maxPct,
