@@ -204,12 +204,18 @@ function renderMonForm(mon, side, panelExtras) {
   const el = document.getElementById(`${side === "attacker" ? "attacker" : "defender"}-form`);
   const stats = getResolvedStats(mon);
   const natureOpts = `<option value="">Neutre</option>` + NATURE_NAMES.map(n => `<option value="${n}" ${n === mon.nature ? "selected" : ""}>${n}</option>`).join("");
+  const resolvedSp = findSpeciesByLooseName(mon.species);
+  const spTypes = resolvedSp && CALC_SPECIES[resolvedSp] ? CALC_SPECIES[resolvedSp].types : [];
+  const typesRow = spTypes.length
+    ? `<div class="calc-mon-types">${spTypes.map(typeBadgeC).join(" ")}</div>`
+    : "";
   el.innerHTML = `
     <div class="calc-field">
       <label>Pokémon</label>
       <div class="calc-search-wrap">
         <input type="text" class="calc-species-input" data-side="${side}" list="calc-species-list" value="${mon.species}" placeholder="Nom du Pokémon...">
       </div>
+      ${typesRow}
     </div>
     <div class="row">
       <div class="calc-field">
@@ -710,17 +716,6 @@ function findRosterFullMon(name) {
   return full.find(m => m.species === name) || full.find(m => normC(m.species) === normC(name)) || null;
 }
 
-function populateTeamPick() {
-  const sel = document.getElementById("team-pick-select");
-  const roster = loadRosterList();
-  if (!roster.length) {
-    sel.innerHTML = `<option value="">Roster vide (renseigne-le dans Prépa Combat)</option>`;
-    return;
-  }
-  sel.innerHTML = `<option value="">— sélectionner —</option>` +
-    roster.map(n => `<option value="${n}" ${n === state.attacker.species ? "selected" : ""}>${n}</option>`).join("");
-}
-
 // ---------- Résolution des noms non reconnus (ex: import anglais) ----------
 let pendingResolveName = null;
 
@@ -787,12 +782,6 @@ function applyAttackerSpecies(name) {
   updateAllSlotBadges();
   renderResult();
 }
-
-document.getElementById("team-pick-select").addEventListener("change", (e) => {
-  const name = e.target.value;
-  if (!name) return;
-  applyAttackerSpecies(name);
-});
 
 document.addEventListener("click", (e) => {
   if (e.target.id !== "calc-resolver-confirm" || !pendingResolveName) return;
@@ -1136,10 +1125,9 @@ function loadTrainerLink() {
 window.addEventListener("storage", (e) => {
   if (e.key === TRAINER_LINK_KEY) loadTrainerLink();
   if (e.key === TEAM_LINK_KEY) renderMyTeamPills();
-  if (e.key === ROSTER_KEY) { populateTeamPick(); renderMyBoxGrid(); }
+  if (e.key === ROSTER_KEY) { renderMyBoxGrid(); }
 });
 
-populateTeamPick();
 loadTrainerLink();
 renderMyTeamPills();
 renderAll();

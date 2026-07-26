@@ -20,6 +20,8 @@
 .calc-field { width: 100%; }
 
 .calc-species-input { font-size: 14px; font-weight: 700; padding: 5px 8px; }
+.calc-mon-types { display: flex; gap: 4px; margin-top: 4px; }
+.calc-mon-types .type-badge { margin-right: 0; }
 
 .calc-resolver-box {
   background: var(--panel-2);
