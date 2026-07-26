@@ -365,11 +365,46 @@ function computeDamage(opts) {
   const defCurrentHp = defender.currentHp != null ? Math.min(defender.currentHp, defHp) : defHp;
   const atkCurrentHp = attacker.currentHp != null ? Math.min(attacker.currentHp, atkStats.hp) : atkStats.hp;
 
+  // abilityActive (case à cocher côté UI) permet de désactiver manuellement
+  // l'effet du talent quand il n'est pas actif dans la situation (ex :
+  // Intimidation déjà appliquée, talent supprimé/ignoré...). Par défaut
+  // (champ absent, ex : équipes de dresseurs) le talent est actif.
+  // Déclarés ici (avant la mécanique Gyroballe/Boule Élek) car les talents
+  // de Vitesse liés à la météo (Chlorophylle, Vent Arrière/Swift Swim, etc.)
+  // doivent aussi s'appliquer à la Vitesse utilisée par ces capacités.
+  const atkAbilityId = attacker.abilityActive !== false ? abilityIdByFrName(attacker.ability) : null;
+  const defAbilityId = defender.abilityActive !== false ? abilityIdByFrName(defender.ability) : null;
+  const atkItem = attacker.item || null;
+  const defItem = defender.item || null;
+  // Les objets sont saisis/stockés en FR (clés de CALC_ITEMS) : on traduit en
+  // EN ici pour toutes les comparaisons (tables ci-dessus indexées en EN).
+  const atkItemEn = atkItem ? (CALC_ITEMS[atkItem] || atkItem) : null;
+  const defItemEn = defItem ? (CALC_ITEMS[defItem] || defItem) : null;
+
+  // Air Lock / Cloud Nine (n'importe quel camp) : annule tous les effets de
+  // la météo (dégâts, boosts de stat, Vitesse) tant qu'il est sur le terrain.
+  const weatherNegated = atkAbilityId === "AIR_LOCK" || atkAbilityId === "CLOUD_NINE"
+    || defAbilityId === "AIR_LOCK" || defAbilityId === "CLOUD_NINE";
+  const effWeather = weatherNegated ? "none" : field.weather;
+  if (weatherNegated && field.weather && field.weather !== "none") {
+    notes.push(`${abilityFrNameById(atkAbilityId === "AIR_LOCK" || atkAbilityId === "CLOUD_NINE" ? atkAbilityId : defAbilityId)} : annule les effets de la météo.`);
+  }
+
+  // Talents de Vitesse doublée sous météo (Chlorophylle/Vent Arrière/Sable
+  // Rush/Glisse Neige) : x2 la Vitesse effective du camp concerné.
+  function weatherSpeedMult(abilityId) {
+    if (effWeather === "soleil" && abilityId === "CHLOROPHYLL") return 2;
+    if (effWeather === "pluie" && abilityId === "SWIFT_SWIM") return 2;
+    if (effWeather === "sable" && abilityId === "SAND_RUSH") return 2;
+    if (effWeather === "neige" && abilityId === "SLUSH_RUSH") return 2;
+    return 1;
+  }
+
   // Puissance/stat variable (Nœud Herbe, Gyroballe, Éruption, etc.)
   const mechanic = MOVE_MECHANIC[move.name];
   if (mechanic) {
-    const atkSpeEff = applyStage(atkStats.spe, (attacker.stages || {}).spe || 0);
-    const defSpeEff = applyStage(defStats.spe, (defender.stages || {}).spe || 0);
+    const atkSpeEff = Math.floor(applyStage(atkStats.spe, (attacker.stages || {}).spe || 0) * weatherSpeedMult(atkAbilityId));
+    const defSpeEff = Math.floor(applyStage(defStats.spe, (defender.stages || {}).spe || 0) * weatherSpeedMult(defAbilityId));
     const atkHpPct = attacker.currentHp != null ? Math.max(0, Math.min(100, 100 * attacker.currentHp / atkStats.hp)) : 100;
     const defHpPct = defender.currentHp != null ? Math.max(0, Math.min(100, 100 * defender.currentHp / defStats.hp)) : 100;
     switch (mechanic) {
@@ -454,19 +489,6 @@ function computeDamage(opts) {
   if (!move.power && !DIRECT_DAMAGE_MECHANIC[move.name]) {
     return { error: "Capacité de statut (pas de dégâts directs)." };
   }
-
-  // abilityActive (case à cocher côté UI) permet de désactiver manuellement
-  // l'effet du talent quand il n'est pas actif dans la situation (ex :
-  // Intimidation déjà appliquée, talent supprimé/ignoré...). Par défaut
-  // (champ absent, ex : équipes de dresseurs) le talent est actif.
-  const atkAbilityId = attacker.abilityActive !== false ? abilityIdByFrName(attacker.ability) : null;
-  const defAbilityId = defender.abilityActive !== false ? abilityIdByFrName(defender.ability) : null;
-  const atkItem = attacker.item || null;
-  const defItem = defender.item || null;
-  // Les objets sont saisis/stockés en FR (clés de CALC_ITEMS) : on traduit en
-  // EN ici pour toutes les comparaisons (tables ci-dessus indexées en EN).
-  const atkItemEn = atkItem ? (CALC_ITEMS[atkItem] || atkItem) : null;
-  const defItemEn = defItem ? (CALC_ITEMS[defItem] || defItem) : null;
 
   // Acrobatie : puissance doublée si l'attaquant n'a pas d'objet en poche.
   // Cas spécial (mécanique officielle depuis la Gen 6) : une Gemme du même
@@ -665,6 +687,21 @@ function computeDamage(opts) {
     notes.push("Tacticien (+50% Attaque).");
   }
 
+  // Talents boostés par la météo (attaque propre uniquement, pas Damoclès/
+  // Tricherie) : Force Solaire (+50% Att. Spé sous soleil, malgré la perte de
+  // PV à chaque tour non modélisée ici) et Don Floral (+50% Attaque sous
+  // soleil pour Cherrymy/Charmillon Fleur).
+  if (usesOwnOffensiveStat && effWeather === "soleil") {
+    if (!isPhysical && atkAbilityId === "SOLAR_POWER") {
+      atkStat = Math.floor(atkStat * 1.5);
+      notes.push("Force Solaire (+50% Attaque Spéciale, soleil).");
+    }
+    if (isPhysical && atkAbilityId === "FLOWER_GIFT") {
+      atkStat = Math.floor(atkStat * 1.5);
+      notes.push("Don Floral (+50% Attaque, soleil).");
+    }
+  }
+
   // Objets modifiant la stat défensive
   if (defItemEn && norm(defItemEn) === norm("Eviolite") && defender.notFullyEvolved) {
     defStat = Math.floor(defStat * 1.5);
@@ -682,11 +719,11 @@ function computeDamage(opts) {
   }
 
   // Météo : boosts de stat passifs (Sable +50% Déf.Spé Roche, Neige +50% Déf Glace)
-  if (field.weather === "sable" && defStageKey === "spd" && defTypes.includes("Roche")) {
+  if (effWeather === "sable" && defStageKey === "spd" && defTypes.includes("Roche")) {
     defStat = Math.floor(defStat * 1.5);
     notes.push("Tempête de sable (+50% Défense Spéciale, type Roche).");
   }
-  if (field.weather === "neige" && defStageKey === "def" && defTypes.includes("Glace")) {
+  if (effWeather === "neige" && defStageKey === "def" && defTypes.includes("Glace")) {
     defStat = Math.floor(defStat * 1.5);
     notes.push("Neige (+50% Défense, type Glace).");
   }
@@ -705,13 +742,20 @@ function computeDamage(opts) {
   }
 
   // Météo
-  const w = field.weather;
+  const w = effWeather;
   if (w === "pluie") {
     if (move.type === "Eau") { mult *= 1.5; notes.push("Pluie (+50% Eau)."); }
     else if (move.type === "Feu") { mult *= 0.5; notes.push("Pluie (-50% Feu)."); }
   } else if (w === "soleil") {
     if (move.type === "Feu") { mult *= 1.5; notes.push("Soleil (+50% Feu)."); }
     else if (move.type === "Eau") { mult *= 0.5; notes.push("Soleil (-50% Eau)."); }
+  }
+
+  // Sable Poigne (attaquant) : +30% de puissance pour les capacités Roche/
+  // Sol/Acier sous tempête de sable.
+  if (w === "sable" && atkAbilityId === "SAND_FORCE" && ["Roche", "Sol", "Acier"].includes(move.type)) {
+    mult *= 1.3;
+    notes.push("Sable Poigne (+30%, type Roche/Sol/Acier, tempête de sable).");
   }
 
   // Terrain (uniquement si Pokémon au sol — non modélisé ici, supposé au sol)

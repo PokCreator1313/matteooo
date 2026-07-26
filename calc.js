@@ -87,13 +87,49 @@ function statusSpeedMult(mon) {
   return 1;
 }
 
-// Valeur affichée d'une stat : applique le stage de combat puis, pour la
-// Vitesse, l'effet du statut (Paralysie / Pied Véloce).
+// Air Lock / Cloud Nine (n'importe quel camp) : annule tous les effets de
+// la météo tant qu'il est sur le terrain (même règle que calc-engine.js).
+function isWeatherNegated() {
+  const a = state.attacker.abilityActive !== false ? abilityIdByFrName(state.attacker.ability) : null;
+  const d = state.defender.abilityActive !== false ? abilityIdByFrName(state.defender.ability) : null;
+  return a === "AIR_LOCK" || a === "CLOUD_NINE" || d === "AIR_LOCK" || d === "CLOUD_NINE";
+}
+
+// Boost de stat passif dû à la météo (même règle que calc-engine.js :
+// Tempête de sable +50% Déf.Spé pour les types Roche, Neige +50% Défense
+// pour les types Glace), pour que la grille de stats affiche la vraie
+// valeur utilisée dans le calcul de dégâts.
+function weatherStatMult(mon, key) {
+  const w = isWeatherNegated() ? "none" : state.field.weather;
+  const resolved = findSpeciesByLooseName(mon.species);
+  const types = resolved && CALC_SPECIES[resolved] ? CALC_SPECIES[resolved].types : [];
+  if (w === "sable" && key === "spd" && types.includes("Roche")) return 1.5;
+  if (w === "neige" && key === "def" && types.includes("Glace")) return 1.5;
+  return 1;
+}
+
+// Talents de Vitesse doublée sous météo (Chlorophylle/Vent Arrière/Sable
+// Rush/Glisse Neige) : même règle que calc-engine.js.
+function weatherSpeedAbilityMult(mon) {
+  const w = isWeatherNegated() ? "none" : state.field.weather;
+  const abilityId = mon.abilityActive !== false ? abilityIdByFrName(mon.ability) : null;
+  if (w === "soleil" && abilityId === "CHLOROPHYLL") return 2;
+  if (w === "pluie" && abilityId === "SWIFT_SWIM") return 2;
+  if (w === "sable" && abilityId === "SAND_RUSH") return 2;
+  if (w === "neige" && abilityId === "SLUSH_RUSH") return 2;
+  return 1;
+}
+
+// Valeur affichée d'une stat : applique le stage de combat, puis, pour la
+// Vitesse, l'effet du statut (Paralysie / Pied Véloce) et des talents
+// boostés par la météo, puis le boost passif de météo (Sable/Neige) sur la
+// Défense concernée.
 function displayStat(mon, key, stats) {
   if (!stats) return "—";
   if (key === "hp") return stats.hp;
   let v = applyStage(stats[key], mon.stages[key] || 0);
-  if (key === "spe") v = Math.floor(v * statusSpeedMult(mon));
+  if (key === "spe") v = Math.floor(v * statusSpeedMult(mon) * weatherSpeedAbilityMult(mon));
+  v = Math.floor(v * weatherStatMult(mon, key));
   return v;
 }
 
@@ -688,7 +724,7 @@ document.addEventListener("change", (e) => {
     return;
   }
 
-  if (t.id === "field-weather") { state.field.weather = t.value; updateAllSlotBadges(); renderResult(); return; }
+  if (t.id === "field-weather") { state.field.weather = t.value; refreshStatCells("attacker"); refreshStatCells("defender"); updateAllSlotBadges(); renderResult(); return; }
   if (t.id === "field-terrain") { state.field.terrain = t.value; updateAllSlotBadges(); renderResult(); return; }
   if (t.id === "field-crit") { state.field.crit = t.checked; updateAllSlotBadges(); renderResult(); return; }
   if (t.id === "field-reflect") { state.field.reflect = t.checked; updateAllSlotBadges(); renderResult(); return; }
