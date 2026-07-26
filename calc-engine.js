@@ -468,6 +468,21 @@ function computeDamage(opts) {
   const atkItemEn = atkItem ? (CALC_ITEMS[atkItem] || atkItem) : null;
   const defItemEn = defItem ? (CALC_ITEMS[defItem] || defItem) : null;
 
+  // Acrobatie : puissance doublée si l'attaquant n'a pas d'objet en poche.
+  // Cas spécial (mécanique officielle depuis la Gen 6) : une Gemme du même
+  // type que la capacité est consommée AVANT que d'utiliser la capacité, donc
+  // au moment où Acrobatie vérifie "pas d'objet", c'est déjà vrai -> le bonus
+  // de la Gemme (+30%) ET le doublement de puissance d'Acrobatie s'appliquent
+  // tous les deux (combo qui fait beaucoup plus mal qu'il n'y paraît).
+  if (move.name === "Acrobatie") {
+    const gemTypeAcro = atkItemEn ? GEM_ITEMS[atkItemEn] : null;
+    const consumesThisTurn = gemTypeAcro && gemTypeAcro === move.type;
+    if (!atkItem || consumesThisTurn) {
+      move.power *= 2;
+      notes.push(`Acrobatie : puissance doublée (pas d'objet${consumesThisTurn ? `, ${atkItem} consommée juste avant` : ""}).`);
+    }
+  }
+
   const defTypes = defSpecies.types;
   const atkTypes = atkSpecies.types;
 
