@@ -509,6 +509,41 @@ document.getElementById("lua-import").addEventListener("click", () => {
     (unknown.length ? ` (non reconnus : ${unknown.join(", ")})` : ".");
 });
 
+// ---------- Import direct depuis un fichier de sauvegarde .sav ----------
+document.getElementById("sav-import").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  const statusEl = document.getElementById("sav-import-status");
+  e.target.value = "";
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let mons;
+    try {
+      mons = parseSavFile(reader.result);
+    } catch (err) {
+      statusEl.textContent = `Impossible de lire ce fichier .sav : ${err.message}`;
+      return;
+    }
+    if (!mons.length) {
+      statusEl.textContent = "Aucun Pokémon détecté dans cette sauvegarde.";
+      return;
+    }
+    const unknown = [];
+    for (const m of mons) {
+      if (!getTypes(m.species)) unknown.push(m.species);
+    }
+    rosterArea.value = mons.map(m => m.species).join("\n");
+    saveRoster();
+    saveRosterFull(mons);
+    renderTeamSelect();
+    renderFaceoff();
+    statusEl.textContent = `${mons.length} Pokémon importés depuis la sauvegarde (niveau, nature, objet, capacités inclus)` +
+      (unknown.length ? ` (non reconnus : ${unknown.join(", ")})` : ".");
+  };
+  reader.onerror = () => { statusEl.textContent = "Erreur de lecture du fichier."; };
+  reader.readAsArrayBuffer(file);
+});
+
 initTrainerFromLink(); // restaure le dernier combat + équipe choisie (pas de reset en changeant de page)
 
 // ---------- 4. Bloc-notes ----------

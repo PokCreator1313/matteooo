@@ -53,7 +53,12 @@ Ponchiot
           </label>
           <input type="file" id="roster-import" accept=".txt,.json" style="display:none">
           <button id="roster-export" class="secondary" type="button">Exporter</button>
+          <label for="sav-import" class="secondary" style="display:inline-block">
+            <button type="button" class="secondary" onclick="document.getElementById('sav-import').click()">Importer un .sav</button>
+          </label>
+          <input type="file" id="sav-import" accept=".sav" style="display:none">
         </div>
+        <div id="sav-import-status" class="sub"></div>
 
         <details style="margin-top:10px">
           <summary>Ou coller l'export du script Lua</summary>
@@ -94,6 +99,8 @@ Charmander @ ..."></textarea>
   <script src="typechart.js"></script>
   <script src="calc-data.js"></script>
   <script src="translate.js"></script>
+  <script src="sav-tables.js"></script>
+  <script src="sav-import.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
