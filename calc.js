@@ -896,11 +896,13 @@ function classifyOhko(best) {
   return "no";
 }
 
-// aggressive=true : c'est le Pokémon de la box qui OHKO (teintes vertes).
-// aggressive=false : c'est le Pokémon de la box qui se fait OHKO (orange/rouge).
+// aggressive=true : c'est le Pokémon de la box qui OHKO (teintes bleues).
+// aggressive=false : c'est le Pokémon de la box qui se fait OHKO (teintes orange).
+// Palette bleu/orange (Okabe-Ito) : distinguable pour tous les types de
+// daltonisme, contrairement à un contraste vert/rouge classique.
 function ohkoColorFor(status, aggressive) {
-  if (status === "always") return aggressive ? "#3ddc84" : "#ff5c6c";
-  if (status === "maybe") return aggressive ? "#a9d84a" : "#e0a030";
+  if (status === "always") return aggressive ? "#0072B2" : "#D55E00";
+  if (status === "maybe") return aggressive ? "#56B4E9" : "#E69F00";
   return null;
 }
 
@@ -915,8 +917,10 @@ function tileBackground(atkStatus, defStatus) {
 
 function speedBorderColor(atkSpe, defSpe) {
   if (atkSpe == null || defSpe == null) return null;
-  if (atkSpe > defSpe) return "#6c8cff"; // outspeed
-  if (atkSpe === defSpe) return "#b46cff"; // égalité
+  // Teintes très écartées (bleu vif / violet-magenta vif) pour rester
+  // distinguables même en cas de daltonisme.
+  if (atkSpe > defSpe) return "#2979FF"; // outspeed
+  if (atkSpe === defSpe) return "#C400FF"; // égalité
   return null; // plus lent : pas de bordure particulière
 }
 

@@ -211,8 +211,8 @@
 }
 .calc-slot-badge.dim { color: var(--muted); font-weight: 500; }
 .calc-slot-badge.imm { color: var(--muted); border-color: var(--muted); }
-.calc-slot-badge.high { color: #e0a030; border-color: #e0a030; }
-.calc-slot-badge.ohko { color: var(--bad); border-color: var(--bad); }
+.calc-slot-badge.high { color: #E69F00; border-color: #E69F00; }
+.calc-slot-badge.ohko { color: #D55E00; border-color: #D55E00; }
 
 .calc-result-block { margin-bottom: 10px; }
 .calc-result-block:last-child { margin-bottom: 0; }
