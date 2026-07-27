@@ -23,8 +23,16 @@
 .calc-nature-fx { color: var(--accent); font-weight: 700; font-size: 10.5px; white-space: nowrap; flex: 0 0 auto; }
 
 .calc-species-input { font-size: 14px; font-weight: 700; padding: 5px 8px; }
-.calc-mon-types { display: flex; gap: 4px; margin-top: 4px; }
+.calc-mon-types { display: flex; gap: 4px; margin-top: 4px; align-items: center; flex-wrap: wrap; }
 .calc-mon-types .type-badge { margin-right: 0; }
+.calc-nfe-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  padding: 1px 6px;
+}
 
 .calc-resolver-box {
   background: var(--panel-2);

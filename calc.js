@@ -52,6 +52,14 @@ function findAbilityKeyLoose(name) {
   return enMatch || null;
 }
 
+// Un Pokémon est "non évolué" (Éviolite active) si son espèce a une évolution
+// possible, d'après la chaîne d'évolution réelle du jeu (SPECIES_NFE, générée
+// depuis les données d'évolution). Détecté automatiquement à partir de
+// l'espèce choisie, plus besoin de case à cocher manuelle.
+function speciesIsNFE(resolvedSpeciesKey) {
+  return !!(resolvedSpeciesKey && SPECIES_NFE[resolvedSpeciesKey]);
+}
+
 function blankMon(extra) {
   return Object.assign({
     species: "", level: 100, nature: "",
@@ -251,8 +259,11 @@ function renderMonForm(mon, side, panelExtras) {
   }).join("");
   const resolvedSp = findSpeciesByLooseName(mon.species);
   const spTypes = resolvedSp && CALC_SPECIES[resolvedSp] ? CALC_SPECIES[resolvedSp].types : [];
-  const typesRow = spTypes.length
-    ? `<div class="calc-mon-types">${spTypes.map(typeBadgeC).join(" ")}</div>`
+  const nfeBadge = (side === "defender" && speciesIsNFE(resolvedSp))
+    ? `<span class="calc-nfe-badge" title="Cette espèce peut encore évoluer : l'Éviolite est automatiquement pris en compte si ce Pokémon le porte.">Non évolué (Éviolite active)</span>`
+    : "";
+  const typesRow = (spTypes.length || nfeBadge)
+    ? `<div class="calc-mon-types">${spTypes.map(typeBadgeC).join(" ")}${nfeBadge}</div>`
     : "";
   el.innerHTML = `
     <div class="calc-field">
@@ -308,11 +319,7 @@ function renderAttackerForm() {
 }
 
 function renderDefenderForm() {
-  const extras = `
-    <div class="calc-checks">
-      <label><input type="checkbox" id="def-notevolved" ${state.defender.notFullyEvolved ? "checked" : ""}> Non évolué (Éviolite)</label>
-    </div>`;
-  renderMonForm(state.defender, "defender", extras);
+  renderMonForm(state.defender, "defender", "");
 }
 
 function typeBadgeC(t) {
@@ -596,6 +603,7 @@ document.addEventListener("input", (e) => {
     if (resolved && !CALC_SPECIES[resolved].abilities.includes(abilityIdByFrName(state[side].ability))) {
       state[side].ability = "";
     }
+    if (side === "defender") state.defender.notFullyEvolved = speciesIsNFE(resolved);
     if (side === "attacker") renderAttackerForm(); else renderDefenderForm();
     updateAllSlotBadges();
     renderResult();
@@ -714,8 +722,6 @@ document.addEventListener("change", (e) => {
     renderResult();
     return;
   }
-  if (t.id === "def-notevolved") { state.defender.notFullyEvolved = t.checked; updateAllSlotBadges(); renderResult(); return; }
-
   if (t.classList.contains("calc-slot-radio")) {
     const ms = t.dataset.ms;
     setActiveSlot(ms, parseInt(t.dataset.idx, 10));
@@ -1079,6 +1085,7 @@ function applyTrainerMonToDefender(mon) {
   const resolvedSpecies = findSpeciesByLooseName(mon.species);
   if (!resolvedSpecies) return;
   state.defender.species = resolvedSpecies;
+  state.defender.notFullyEvolved = speciesIsNFE(resolvedSpecies);
   state.defender.currentHp = null;
   if (mon.level) state.defender.level = mon.level;
   const natKey = mon.nature ? findNatureKeyLoose(mon.nature) : null;
