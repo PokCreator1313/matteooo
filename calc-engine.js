@@ -233,6 +233,32 @@ const MOVE_MECHANIC = {
 // Seule l'immunité de type s'applique toujours. Vérifié via les mécaniques
 // officielles (Bulbapedia).
 // ------------------------------------------------------------------
+// ------------------------------------------------------------------
+// Capacités propres à Run & Bun (mécaniques modifiées par rapport au jeu
+// standard, vérifiées via "Changements de Capacités.xlsx") :
+// - Destruction/Explosion/Explo-Brume : divisent par 2 la stat défensive
+//   utilisée (Déf ou Déf. Spé selon la catégorie) du Pokémon touché lors
+//   du calcul des dégâts (mécanique Gen 1-4 réintroduite ici).
+// - Puissance Cachée : puissance fixe à 60 (déjà dans CALC_MOVES), mais
+//   type déterminé par les IVs de l'attaquant (mécanique Gen 3-5).
+// ------------------------------------------------------------------
+const TARGET_DEF_HALVED_MOVES = new Set(["Explosion", "Destruction", "Explo-Brume"]);
+
+const HIDDEN_POWER_TYPES = [
+  "Combat", "Vol", "Poison", "Sol", "Roche", "Insecte", "Spectre", "Acier",
+  "Feu", "Eau", "Plante", "Electrik", "Psy", "Glace", "Dragon", "Tenebres",
+];
+
+// Formule officielle (Gen 3-5) : un bit par IV (parité), pondéré, pour
+// déterminer l'index de type parmi les 16 possibles.
+function computeHiddenPowerType(ivs) {
+  if (!ivs) return "Combat";
+  const bit = k => (ivs[k] != null ? ivs[k] : 31) % 2;
+  const sum = bit("hp") + 2 * bit("atk") + 4 * bit("def") + 8 * bit("spe") + 16 * bit("spa") + 32 * bit("spd");
+  const index = Math.floor((sum * 15) / 63);
+  return HIDDEN_POWER_TYPES[index];
+}
+
 const DIRECT_DAMAGE_MECHANIC = {
   "Sonic Boom": { type: "fixed", value: 20 },
   "Draco-Rage": { type: "fixed", value: 40 },
@@ -352,8 +378,13 @@ function sumPositiveStages(stages) {
 // Balle Fer (Iron Ball) ancre le défenseur au sol : elle annule à la fois
 // l'immunité Sol de Lévitation et celle du type Vol (cette dernière est
 // gérée séparément, sur l'efficacité de type, voir plus bas dans computeDamage).
-function checkImmunity(moveType, defAbilityId, defTypes, defItemEn) {
+// Myria-Flèches (Thousand Arrows) ancre également sa cible au sol : elle
+// touche normalement les Pokémon Vol, Lévitation ou Ballon d'Air, comme si
+// tous ces effets d'envol n'existaient pas (mécanique officielle du jeu,
+// pas spécifique à Run & Bun).
+function checkImmunity(moveType, defAbilityId, defTypes, defItemEn, moveName) {
   const t = moveType;
+  if (moveName === "Myria-Flèches" && t === "Sol") return false;
   if (t === "Sol" && defItemEn === "Air Balloon") return true;
   if (t === "Sol" && defItemEn === "Iron Ball") return false;
   if (defAbilityId === "LEVITATE" && t === "Sol") return true;
@@ -398,6 +429,13 @@ function computeDamage(opts) {
   if (!move) return { error: "Capacité inconnue." };
   if (move.cat === "Statut") {
     return { error: "Capacité de statut (pas de dégâts directs)." };
+  }
+
+  // Puissance Cachée : type déterminé par les IVs de l'attaquant (uniquement
+  // si la capacité n'a pas déjà un type fourni manuellement).
+  if (move.name === "Puissance Cachée" && !opts.move.manual) {
+    move.type = computeHiddenPowerType(attacker.ivs);
+    notes.push(`Puissance Cachée : type déterminé par les IVs de l'attaquant (${move.type}).`);
   }
 
   const atkStats = computeStats(attacker);
@@ -551,7 +589,7 @@ function computeDamage(opts) {
   const defTypes = defSpecies.types;
   const atkTypes = atkSpecies.types;
 
-  if (checkImmunity(move.type, defAbilityId, defTypes, defItemEn)) {
+  if (checkImmunity(move.type, defAbilityId, defTypes, defItemEn, move.name)) {
     const reason = defItemEn === "Air Balloon" ? `${defItem} annule l'attaque (immunité Sol).` : `${abilityFrNameById(defAbilityId)} annule l'attaque.`;
     return { immune: true, rolls: [0], min: 0, max: 0, minPct: 0, maxPct: 0, notes: [reason] };
   }
@@ -563,6 +601,14 @@ function computeDamage(opts) {
     const groundedTypes = defTypes.filter(t => t !== "Vol");
     effectiveness = groundedTypes.length ? typeMultiplier(move.type, groundedTypes) : 1;
     notes.push(`${defItem} : ancre le défenseur au sol (immunité Vol au Sol annulée).`);
+  }
+  // Myria-Flèches (Thousand Arrows) : ancre également la cible au sol, donc
+  // ignore le type Vol dans le calcul d'efficacité (le touche normalement au
+  // lieu de l'immuniser).
+  if (move.name === "Myria-Flèches" && defTypes.includes("Vol")) {
+    const groundedTypes = defTypes.filter(t => t !== "Vol");
+    effectiveness = groundedTypes.length ? typeMultiplier(move.type, groundedTypes) : 1;
+    notes.push("Myria-Flèches : touche normalement les Pokémon Vol/Lévitation/Ballon d'Air (ancrés au sol).");
   }
   if (effectiveness === 0) {
     return { immune: true, rolls: [0], min: 0, max: 0, minPct: 0, maxPct: 0, notes: ["Immunité de type."] };
@@ -769,6 +815,14 @@ function computeDamage(opts) {
   if (effWeather === "neige" && defStageKey === "def" && defTypes.includes("Glace")) {
     defStat = Math.floor(defStat * 1.5);
     notes.push("Neige (+50% Défense, type Glace).");
+  }
+
+  // Mécanique propre à Run & Bun : Destruction/Explosion/Explo-Brume
+  // divisent par 2 la stat défensive du Pokémon touché lors du calcul des
+  // dégâts (appliqué en dernier, sur la valeur finale de la stat).
+  if (TARGET_DEF_HALVED_MOVES.has(move.name)) {
+    defStat = Math.floor(defStat / 2);
+    notes.push(`${move.name} : divise par 2 la ${defStageKey === "def" ? "Défense" : "Défense Spéciale"} du Pokémon touché (mécanique Run & Bun).`);
   }
 
   // Dégâts de base
