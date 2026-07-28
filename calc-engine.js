@@ -40,6 +40,36 @@ function norm(s) {
 // Table réduite d'objets +12,5%/+20% par type de capacité (noms EN, alignés
 // sur CALC_ITEMS qui mappe FR -> EN). Couvre les objets "boost de type" les
 // plus courants.
+// Plaques (17) : type -> nom EN de la Plaque correspondante. Sert à la fois
+// pour le boost +20% générique (TYPE_BOOST_ITEMS ci-dessous) et pour Jugement
+// (Judgment), dont le type dépend de la Plaque tenue par l'attaquant.
+const PLATE_TYPES = {
+  "Feu": "Flame Plate", "Eau": "Splash Plate", "Electrik": "Zap Plate",
+  "Plante": "Meadow Plate", "Glace": "Icicle Plate", "Combat": "Fist Plate",
+  "Poison": "Toxic Plate", "Sol": "Earth Plate", "Vol": "Sky Plate",
+  "Psy": "Mind Plate", "Insecte": "Insect Plate", "Roche": "Stone Plate",
+  "Spectre": "Spooky Plate", "Dragon": "Draco Plate", "Tenebres": "Dread Plate",
+  "Acier": "Iron Plate", "Fee": "Pixie Plate",
+};
+
+// Modules (Drives, 4) : type -> nom EN du Module tenu. Sert à Techno-Buster
+// (Techno Blast), dont le type dépend du Module tenu par l'attaquant.
+const DRIVE_TYPES = {
+  "Feu": "Burn Drive", "Glace": "Chill Drive", "Eau": "Douse Drive", "Electrik": "Shock Drive",
+};
+
+// ROM (Memories, 17 avec Normal) : type -> nom EN de la ROM tenue. Sert à
+// Coup Varia-Type (Multi-Attack), dont le type dépend de la ROM tenue par
+// l'attaquant (Normal par défaut, sans ROM).
+const MEMORY_TYPES = {
+  "Feu": "Fire Memory", "Eau": "Water Memory", "Electrik": "Electric Memory",
+  "Plante": "Grass Memory", "Glace": "Ice Memory", "Combat": "Fighting Memory",
+  "Poison": "Poison Memory", "Sol": "Ground Memory", "Vol": "Flying Memory",
+  "Psy": "Psychic Memory", "Insecte": "Bug Memory", "Roche": "Rock Memory",
+  "Spectre": "Ghost Memory", "Dragon": "Dragon Memory", "Tenebres": "Dark Memory",
+  "Acier": "Steel Memory", "Fee": "Fairy Memory",
+};
+
 const TYPE_BOOST_ITEMS = {
   "Charcoal": "Feu", "Mystic Water": "Eau", "Miracle Seed": "Plante",
   "Magnet": "Electrik", "Never-Melt Ice": "Glace", "NeverMeltIce": "Glace",
@@ -47,8 +77,9 @@ const TYPE_BOOST_ITEMS = {
   "Sharp Beak": "Vol", "Twisted Spoon": "Psy", "Silver Powder": "Insecte",
   "SilverPowder": "Insecte", "Hard Stone": "Roche", "Spell Tag": "Spectre",
   "Dragon Fang": "Dragon", "Black Glasses": "Tenebres", "Metal Coat": "Acier",
-  "Fairy Feather": "Fee", "Pixie Plate": "Fee", "Silk Scarf": "Normal",
-  "Dread Plate": "Tenebres",
+  "Fairy Feather": "Fee", "Silk Scarf": "Normal",
+  // Toutes les Plaques (17) donnent +20% aux capacités de leur type.
+  ...Object.fromEntries(Object.entries(PLATE_TYPES).map(([type, item]) => [item, type])),
 };
 
 // Objets à double type boosté (+20% sur deux types au lieu d'un). Orbe
@@ -56,6 +87,14 @@ const TYPE_BOOST_ITEMS = {
 // depuis la Gen 5. Noms EN (alignés sur CALC_ITEMS).
 const DUAL_TYPE_BOOST_ITEMS = {
   "Griseous Orb": ["Dragon", "Spectre"],
+};
+
+// Orbes Adamant/Perlé (Adamant Orb/Lustrous Orb) : même bonus +20% sur deux
+// types, mais restreint à Dialga/Palkia (contrairement à l'Orbe Platiné qui
+// n'a plus de restriction d'espèce depuis la Gen 5). Formes Origine incluses.
+const DUAL_TYPE_BOOST_ITEMS_RESTRICTED = {
+  "Adamant Orb": { types: ["Acier", "Dragon"], species: new Set(["Dialga", "Dialga-Origin"]) },
+  "Lustrous Orb": { types: ["Eau", "Dragon"], species: new Set(["Palkia", "Palkia-Origin"]) },
 };
 
 // Graines de terrain : +1 palier Déf (Élek/Herbu) ou Déf. Spé (Brume/Psy)
@@ -102,6 +141,7 @@ const STAT_BOOST_BERRIES = {
 // Objets qui doublent une stat pour une espèce précise.
 const THICK_CLUB_SPECIES = new Set(["Osselait", "Ossatueur", "Ossatueur-Alola"]);
 const LIGHT_BALL_SPECIES = new Set(["Pikachu", "Pikachu-Gmax"]);
+const DEEP_SEA_SPECIES = new Set(["Coquiperl"]);
 
 function abilityIdByFrName(frName) {
   if (!frName) return null;
@@ -462,6 +502,32 @@ function computeDamage(opts) {
   const atkItemEn = atkItem ? (CALC_ITEMS[atkItem] || atkItem) : null;
   const defItemEn = defItem ? (CALC_ITEMS[defItem] || defItem) : null;
 
+  // Jugement (Judgment) / Techno-Buster (Techno Blast) / Coup Varia-Type
+  // (Multi-Attack) : type déterminé par la Plaque/le Module/la ROM tenue par
+  // l'attaquant (reste Normal si aucun objet correspondant n'est tenu, comme
+  // stocké par défaut dans CALC_MOVES).
+  if (move.name === "Jugement" && atkItemEn) {
+    const plateType = Object.keys(PLATE_TYPES).find(t => PLATE_TYPES[t] === atkItemEn);
+    if (plateType) {
+      move.type = plateType;
+      notes.push(`Jugement : type déterminé par la Plaque tenue (${move.type}).`);
+    }
+  }
+  if (move.name === "Techno-Buster" && atkItemEn) {
+    const driveType = Object.keys(DRIVE_TYPES).find(t => DRIVE_TYPES[t] === atkItemEn);
+    if (driveType) {
+      move.type = driveType;
+      notes.push(`Techno-Buster : type déterminé par le Module tenu (${move.type}).`);
+    }
+  }
+  if (move.name === "Coup Varia-Type" && atkItemEn) {
+    const memoryType = Object.keys(MEMORY_TYPES).find(t => MEMORY_TYPES[t] === atkItemEn);
+    if (memoryType) {
+      move.type = memoryType;
+      notes.push(`Coup Varia-Type : type déterminé par la ROM tenue (${move.type}).`);
+    }
+  }
+
   // Air Lock / Cloud Nine (n'importe quel camp) : annule tous les effets de
   // la météo (dégâts, boosts de stat, Vitesse) tant qu'il est sur le terrain.
   const weatherNegated = atkAbilityId === "AIR_LOCK" || atkAbilityId === "CLOUD_NINE"
@@ -471,21 +537,33 @@ function computeDamage(opts) {
     notes.push(`${abilityFrNameById(atkAbilityId === "AIR_LOCK" || atkAbilityId === "CLOUD_NINE" ? atkAbilityId : defAbilityId)} : annule les effets de la météo.`);
   }
 
+  // Parapluie Solide (Utility Umbrella) : protège son porteur des effets du
+  // Soleil et de la Pluie uniquement (pas de la Tempête de Sable/Neige/Grêle).
+  // Utilisé pour la météo "vue" par chaque camp séparément (talents de
+  // Vitesse/stat liés au soleil/pluie, et plus bas pour le boost/malus de
+  // puissance Feu/Eau).
+  function umbrellaWeather(itemEn, weather) {
+    if (itemEn === "Utility Umbrella" && (weather === "soleil" || weather === "pluie")) return "none";
+    return weather;
+  }
+  const atkEffWeather = umbrellaWeather(atkItemEn, effWeather);
+  const defEffWeather = umbrellaWeather(defItemEn, effWeather);
+
   // Talents de Vitesse doublée sous météo (Chlorophylle/Vent Arrière/Sable
   // Rush/Glisse Neige) : x2 la Vitesse effective du camp concerné.
-  function weatherSpeedMult(abilityId) {
-    if (effWeather === "soleil" && abilityId === "CHLOROPHYLL") return 2;
-    if (effWeather === "pluie" && abilityId === "SWIFT_SWIM") return 2;
-    if (effWeather === "sable" && abilityId === "SAND_RUSH") return 2;
-    if (effWeather === "neige" && abilityId === "SLUSH_RUSH") return 2;
+  function weatherSpeedMult(abilityId, weatherForSide) {
+    if (weatherForSide === "soleil" && abilityId === "CHLOROPHYLL") return 2;
+    if (weatherForSide === "pluie" && abilityId === "SWIFT_SWIM") return 2;
+    if (weatherForSide === "sable" && abilityId === "SAND_RUSH") return 2;
+    if (weatherForSide === "neige" && abilityId === "SLUSH_RUSH") return 2;
     return 1;
   }
 
   // Puissance/stat variable (Nœud Herbe, Gyroballe, Éruption, etc.)
   const mechanic = MOVE_MECHANIC[move.name];
   if (mechanic) {
-    const atkSpeEff = Math.floor(applyStage(atkStats.spe, (attacker.stages || {}).spe || 0) * weatherSpeedMult(atkAbilityId));
-    const defSpeEff = Math.floor(applyStage(defStats.spe, (defender.stages || {}).spe || 0) * weatherSpeedMult(defAbilityId));
+    const atkSpeEff = Math.floor(applyStage(atkStats.spe, (attacker.stages || {}).spe || 0) * weatherSpeedMult(atkAbilityId, atkEffWeather));
+    const defSpeEff = Math.floor(applyStage(defStats.spe, (defender.stages || {}).spe || 0) * weatherSpeedMult(defAbilityId, defEffWeather));
     const atkHpPct = attacker.currentHp != null ? Math.max(0, Math.min(100, 100 * attacker.currentHp / atkStats.hp)) : 100;
     const defHpPct = defender.currentHp != null ? Math.max(0, Math.min(100, 100 * defender.currentHp / defStats.hp)) : 100;
     switch (mechanic) {
@@ -814,6 +892,10 @@ function computeDamage(opts) {
       atkStat = atkStat * 2;
       notes.push(`Ballelumière (+100% ${atkStageKey === "atk" ? "Attaque" : "Attaque Spéciale"}).`);
     }
+    if (atkStageKey === "spa" && atkItemEn === "Deep Sea Tooth" && DEEP_SEA_SPECIES.has(attacker.species)) {
+      atkStat = atkStat * 2;
+      notes.push("Dent Océan (+100% Attaque Spéciale).");
+    }
   }
   if (usesOwnOffensiveStat && isPhysical && atkAbilityId === "GORILLA_TACTICS") {
     atkStat = Math.floor(atkStat * 1.5);
@@ -824,7 +906,7 @@ function computeDamage(opts) {
   // Tricherie) : Force Solaire (+50% Att. Spé sous soleil, malgré la perte de
   // PV à chaque tour non modélisée ici) et Don Floral (+50% Attaque sous
   // soleil pour Cherrymy/Charmillon Fleur).
-  if (usesOwnOffensiveStat && effWeather === "soleil") {
+  if (usesOwnOffensiveStat && atkEffWeather === "soleil") {
     if (!isPhysical && atkAbilityId === "SOLAR_POWER") {
       atkStat = Math.floor(atkStat * 1.5);
       notes.push("Force Solaire (+50% Attaque Spéciale, soleil).");
@@ -843,6 +925,10 @@ function computeDamage(opts) {
   if (defItemEn && norm(defItemEn) === norm("Assault Vest") && defStageKey === "spd") {
     defStat = Math.floor(defStat * 1.5);
     notes.push("Veste de Combat (+50% Défense Spéciale).");
+  }
+  if (defItemEn === "Deep Sea Scale" && defStageKey === "spd" && DEEP_SEA_SPECIES.has(defender.species)) {
+    defStat = defStat * 2;
+    notes.push("Écaille Océan (+100% Défense Spéciale).");
   }
 
   // Écaille Spéciale : +50% Déf/Déf.Spé si le défenseur a un statut
@@ -885,14 +971,21 @@ function computeDamage(opts) {
     notes.push("Cible multiple (capacité qui touche les deux adversaires, -25%).");
   }
 
-  // Météo
-  const w = effWeather;
+  // Météo (Parapluie Solide côté attaquant OU défenseur annule le boost/malus
+  // Feu/Eau du soleil/pluie : son porteur, qu'il attaque ou soit visé, est
+  // traité comme si le soleil/la pluie n'affectait pas ce type de capacités).
+  const umbrellaCancelsWeatherPower = (atkItemEn === "Utility Umbrella" || defItemEn === "Utility Umbrella")
+    && (effWeather === "soleil" || effWeather === "pluie");
+  const w = umbrellaCancelsWeatherPower ? "none" : effWeather;
   if (w === "pluie") {
     if (move.type === "Eau") { mult *= 1.5; notes.push("Pluie (+50% Eau)."); }
     else if (move.type === "Feu") { mult *= 0.5; notes.push("Pluie (-50% Feu)."); }
   } else if (w === "soleil") {
     if (move.type === "Feu") { mult *= 1.5; notes.push("Soleil (+50% Feu)."); }
     else if (move.type === "Eau") { mult *= 0.5; notes.push("Soleil (-50% Eau)."); }
+  }
+  if (umbrellaCancelsWeatherPower && (move.type === "Eau" || move.type === "Feu")) {
+    notes.push(`Parapluie Solide (${atkItemEn === "Utility Umbrella" ? atkItem : defItem}) : annule l'effet de la météo sur les capacités Eau/Feu.`);
   }
 
   // Sable Poigne (attaquant) : +30% de puissance pour les capacités Roche/
@@ -999,6 +1092,10 @@ function computeDamage(opts) {
     if (boostType && boostType === move.type) { mult *= 1.2; notes.push(`${atkItem} (+20%, type ${boostType}).`); }
     const dualBoostTypes = DUAL_TYPE_BOOST_ITEMS[atkItemEn];
     if (dualBoostTypes && dualBoostTypes.includes(move.type)) { mult *= 1.2; notes.push(`${atkItem} (+20%, type ${move.type}).`); }
+    const restrictedDualBoost = DUAL_TYPE_BOOST_ITEMS_RESTRICTED[atkItemEn];
+    if (restrictedDualBoost && restrictedDualBoost.species.has(attacker.species) && restrictedDualBoost.types.includes(move.type)) {
+      mult *= 1.2; notes.push(`${atkItem} (+20%, type ${move.type}).`);
+    }
     const gemType = GEM_ITEMS[atkItemEn];
     if (gemType && gemType === move.type) { mult *= 1.3; notes.push(`${atkItem} (+30%, type ${gemType}, consommée après usage).`); }
   }
