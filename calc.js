@@ -142,7 +142,7 @@ function displayStat(mon, key, stats) {
 }
 
 function blankSlot() {
-  return { name: "" };
+  return { name: "", crit: false };
 }
 
 // Résout chaque nom de capacité (souvent en anglais, venant d'un import
@@ -349,7 +349,7 @@ function buildComputeOpts(ms, slot) {
     attacker: Object.assign({}, atkMon, { species: aSpecies }),
     defender: Object.assign({}, defMon, { species: dSpecies }),
     move: resolveSlotMove(slot),
-    field: state.field,
+    field: Object.assign({}, state.field, { crit: !!slot.crit }),
   };
 }
 
@@ -441,6 +441,31 @@ function updateSlotPower(ms, i) {
   if (el) el.outerHTML = slotPowerHtml(ms, i);
 }
 
+// Coup critique par capacité : une case à cocher par moov (plutôt qu'une
+// case globale qui s'appliquait aux 4 capacités à la fois). Les capacités à
+// crit garanti (ALWAYS_CRIT_MOVES / Torrent de Coups, cf calc-engine.js) sont
+// affichées cochées et verrouillées puisqu'elles critent toujours.
+function slotAlwaysCrit(slot) {
+  const key = findMoveByLooseName(slot.name);
+  if (!key) return false;
+  return ALWAYS_CRIT_MOVES.has(key) || !!(MULTI_HIT_MOVES[key] || {}).forceCrit;
+}
+
+function slotCritHtml(ms, i) {
+  const slot = movesetArr(ms)[i];
+  const always = slotAlwaysCrit(slot);
+  const checked = always || !!slot.crit;
+  const title = always ? "Coup critique garanti sur cette capacité" : "Coup critique sur cette capacité";
+  return `<label class="calc-slot-crit${checked ? " active" : ""}" id="slot-crit-${ms}-${i}" title="${title}">
+    <input type="checkbox" class="calc-slot-crit-check" data-ms="${ms}" data-idx="${i}" ${checked ? "checked" : ""} ${always ? "disabled" : ""}> Crit
+  </label>`;
+}
+
+function updateSlotCritBadge(ms, i) {
+  const el = document.getElementById(`slot-crit-${ms}-${i}`);
+  if (el) el.outerHTML = slotCritHtml(ms, i);
+}
+
 function moveResolveBtnHtml(ms, i, slot) {
   const unresolved = slot.name && !findMoveByLooseName(slot.name);
   return unresolved
@@ -468,6 +493,7 @@ function movesetRow(ms, slot, i) {
     <div class="calc-move-inputs">
       <input type="text" class="calc-slot-name" data-ms="${ms}" data-idx="${i}" list="calc-move-list" value="${slot.name}" placeholder="Capacité ${i + 1}...">
     </div>
+    ${slotCritHtml(ms, i)}
     ${slotTypeBadgeHtml(ms, i)}
     ${slotCatBadgeHtml(ms, i)}
     ${slotPowerHtml(ms, i)}
@@ -658,6 +684,7 @@ document.addEventListener("input", (e) => {
     updateSlotTypeBadge(ms, i);
     updateSlotCatBadge(ms, i);
     updateSlotPower(ms, i);
+    updateSlotCritBadge(ms, i);
     updateMoveResolveBtn(ms, i);
     if (i === activeSlotOf(ms)) renderResult();
     return;
@@ -681,6 +708,7 @@ document.addEventListener("click", (e) => {
   updateSlotTypeBadge(ms, i);
   updateSlotPower(ms, i);
   updateSlotBadge(ms, i);
+  updateSlotCritBadge(ms, i);
   updateMoveResolveBtn(ms, i);
   if (i === activeSlotOf(ms)) renderResult();
 });
@@ -720,6 +748,14 @@ document.addEventListener("change", (e) => {
     refreshStatCells(t.dataset.side);
     updateAllSlotBadges();
     renderResult();
+    return;
+  }
+  if (t.classList.contains("calc-slot-crit-check")) {
+    const ms = t.dataset.ms, i = parseInt(t.dataset.idx, 10);
+    movesetArr(ms)[i].crit = t.checked;
+    updateSlotBadge(ms, i);
+    updateSlotCritBadge(ms, i);
+    if (i === activeSlotOf(ms)) renderResult();
     return;
   }
   if (t.classList.contains("calc-slot-radio")) {

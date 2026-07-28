@@ -358,6 +358,16 @@ const MULTI_HIT_MOVES = {
   "Triple Axel": { ramp: [1, 2, 3] },
 };
 
+// Capacités à coup critique garanti (100%, indépendamment des paliers de
+// stat/talent — mécanique officielle, vérifiée via Bulbapedia/PokeAPI :
+// Storm Throw/Frost Breath/Wicked Blow/Flower Trick ont toujours été
+// garantis crit ; Surging Strikes (Torrent de Coups) l'est aussi mais est
+// déjà géré via MULTI_HIT_MOVES.forceCrit ci-dessus, donc absent d'ici pour
+// éviter un doublon de note).
+const ALWAYS_CRIT_MOVES = new Set([
+  "Souffle Glacé", "Yama Arashi", "Poing Obscur", "Magie Florale",
+]);
+
 function powerByWeightTarget(kg) {
   if (kg == null) return null;
   if (kg < 10) return 20;
@@ -795,8 +805,11 @@ function computeDamage(opts) {
   const dstages = defender.stages || {};
 
   // Choix stat off/def, avec prise en compte du critique (ignore baisses
-  // atk / hausses def du côté concerné, mécanique standard).
-  const critIgnoresDrop = !!field.crit;
+  // atk / hausses def du côté concerné, mécanique standard). Les capacités
+  // à coup critique garanti (ALWAYS_CRIT_MOVES / Torrent de Coups) comptent
+  // aussi comme critique ici, même si la case "Coup critique" n'est pas cochée.
+  const alwaysCrit = ALWAYS_CRIT_MOVES.has(move.name) || (MULTI_HIT_MOVES[move.name] || {}).forceCrit;
+  const critIgnoresDrop = !!field.crit || alwaysCrit;
   // Damoclès (Body Press) : utilise la Défense de l'attaquant à la place
   // de l'Attaque/Attaque Spéciale. Choc Psy/Frappe Psy/Lame Ointe :
   // catégorie Spéciale mais défense = Défense (pas Déf. Spé.) de la cible.
@@ -1007,6 +1020,9 @@ function computeDamage(opts) {
   if (field.crit) {
     critMult = (atkAbilityId === "SNIPER") ? 2.25 : 1.5;
     notes.push(`Coup critique (x${critMult}).`);
+  } else if (ALWAYS_CRIT_MOVES.has(move.name)) {
+    critMult = (atkAbilityId === "SNIPER") ? 2.25 : 1.5;
+    notes.push(`${move.name} : coup critique garanti (x${critMult}).`);
   }
 
   // STAB
@@ -1073,7 +1089,7 @@ function computeDamage(opts) {
   }
 
   // Écrans (ignorés si critique)
-  if (!field.crit) {
+  if (!field.crit && !alwaysCrit) {
     if (field.auroraveil) { mult *= 0.5; notes.push("Voile Aurore (-50%)."); }
     else if (isPhysical && field.reflect) { mult *= 0.5; notes.push("Protection (-50% Physique)."); }
     else if (!isPhysical && field.lightscreen) { mult *= 0.5; notes.push("Mur Lumière (-50% Spéciale)."); }

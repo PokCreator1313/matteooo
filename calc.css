@@ -180,7 +180,26 @@
 .calc-move-radio input { margin: 0; cursor: pointer; }
 .calc-move-inputs { display: flex; flex: 1 1 auto; gap: 4px; min-width: 0; }
 .calc-move-inputs input, .calc-move-inputs select { min-width: 0; padding: 4px 5px; font-size: 11px; }
-.calc-move-inputs .calc-slot-name { flex: 1 1 auto; }
+.calc-move-inputs .calc-slot-name { flex: 1 1 70px; max-width: 110px; }
+.calc-slot-crit {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 34px;
+  justify-content: center;
+  text-align: center;
+  font-size: 9.5px;
+  font-weight: 700;
+  border-radius: 5px;
+  padding: 2px 4px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--muted);
+  cursor: pointer;
+}
+.calc-slot-crit input { margin: 0; cursor: pointer; }
+.calc-slot-crit.active { background: rgba(213,94,0,0.18); color: #D55E00; border-color: rgba(213,94,0,0.5); }
 .calc-move-type { flex: 0 0 auto; display: flex; align-items: center; }
 .calc-move-type .type-badge { margin-right: 0; padding: 1px 6px; font-size: 9.5px; }
 .type-badge.calc-type-badge-empty { background: var(--panel); color: var(--muted); border: 1px solid var(--border); }
