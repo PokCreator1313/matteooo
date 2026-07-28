@@ -586,6 +586,50 @@ function computeDamage(opts) {
     }
   }
 
+  // Talents qui changent le type d'une capacité Normal en un autre type
+  // (famille "-ate" : Peau Céleste/Féérique/Gelée/Électrique) : la capacité
+  // devient du type indiqué et gagne +20% de puissance (mécanique officielle,
+  // pas spécifique à Run & Bun). Normalise fait l'inverse (n'importe quelle
+  // capacité devient Normal, +20% également, mécanique depuis la Gen 8).
+  // Exclues (comme dans le jeu officiel) : les capacités qui ont déjà un type
+  // variable/déterminé autrement (Jugement, Coup Varia-Type, Don Naturel,
+  // Ball'Météo, Techno-Buster, Champlification, Danse Éveil, Puissance
+  // Cachée), jamais affectées par ces talents même si leur type "par défaut"
+  // stocké ici est Normal.
+  const VARIABLE_TYPE_MOVES = new Set([
+    "Jugement", "Coup Varia-Type", "Don Naturel", "Ball'Météo", "Techno-Buster",
+    "Champlification", "Danse Éveil", "Puissance Cachée",
+  ]);
+  const NORMAL_TO_TYPE_ABILITIES = {
+    AERILATE: "Vol", PIXILATE: "Fee", REFRIGERATE: "Glace", GALVANIZE: "Electrik",
+  };
+  if (!VARIABLE_TYPE_MOVES.has(move.name)) {
+    if (move.type === "Normal" && NORMAL_TO_TYPE_ABILITIES[atkAbilityId]) {
+      move.type = NORMAL_TO_TYPE_ABILITIES[atkAbilityId];
+      move.power = Math.floor(move.power * 1.2);
+      notes.push(`${abilityFrNameById(atkAbilityId)} : ${move.name} devient de type ${move.type} (+20% de puissance).`);
+    } else if (atkAbilityId === "NORMALIZE" && move.type !== "Normal") {
+      move.type = "Normal";
+      move.power = Math.floor(move.power * 1.2);
+      notes.push("Normalise : la capacité devient de type Normal (+20% de puissance).");
+    }
+  }
+  // Hydrata-Son (Liquid Voice) : les capacités à son deviennent de type Eau
+  // (pas de bonus de puissance, contrairement à la famille "-ate").
+  const SOUND_MOVES = new Set([
+    "Bang Sonique", "Bourdon", "Babil", "Vibrécaille", "Dracacophonie",
+    "Confidence", "Voix Enjôleuse", "Écho", "Sort Sinistre", "Siffl'Herbe",
+    "Rugissement", "Glas de Soin", "Grondement", "Mégaphone", "Strido-Son",
+    "Râle Mâle", "Overdrive", "Dernier Mot", "Requiem", "Chant Antique",
+    "Hurlement", "Chant Canon", "Grincement", "Berceuse", "Aboiement",
+    "Ronflement", "Ultrason", "Chant Flamboyant", "Brouhaha", "Voix Envoûtante",
+    "Dissonance Psy", "Aria de l'Écume",
+  ]);
+  if (atkAbilityId === "LIQUID_VOICE" && SOUND_MOVES.has(move.name) && move.type !== "Eau") {
+    move.type = "Eau";
+    notes.push("Hydrata-Son : capacité à son devient de type Eau.");
+  }
+
   const defTypes = defSpecies.types;
   const atkTypes = atkSpecies.types;
 

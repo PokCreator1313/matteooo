@@ -805,7 +805,7 @@ function applyAttackerSpecies(name) {
     state.attacker.level = full.level || 100;
     const natKey = full.nature ? findNatureKeyLoose(full.nature) : null;
     state.attacker.nature = natKey || "";
-    const itemKey = full.item ? findLooseKey(ITEM_NAMES, full.item) : null;
+    const itemKey = full.item ? findItemByLooseName(full.item) : null;
     state.attacker.item = itemKey || full.item || "";
     state.attacker.evs = Object.assign({ hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 }, full.evs);
     state.attacker.ivs = Object.assign({ hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 }, full.ivs);
@@ -903,7 +903,7 @@ function buildRosterCandidateMon(name) {
     mon.level = full.level || 100;
     const natKey = full.nature ? findNatureKeyLoose(full.nature) : null;
     mon.nature = natKey || "";
-    const itemKey = full.item ? findLooseKey(ITEM_NAMES, full.item) : null;
+    const itemKey = full.item ? findItemByLooseName(full.item) : null;
     mon.item = itemKey || full.item || "";
     mon.evs = Object.assign({ hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 }, full.evs);
     mon.ivs = Object.assign({ hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 }, full.ivs);
@@ -1090,8 +1090,8 @@ function applyTrainerMonToDefender(mon) {
   if (mon.level) state.defender.level = mon.level;
   const natKey = mon.nature ? findNatureKeyLoose(mon.nature) : null;
   state.defender.nature = natKey || "";
-  const itemKey = mon.item ? findLooseKey(ITEM_NAMES, mon.item) : null;
-  state.defender.item = itemKey || "";
+  const itemKey = mon.item ? findItemByLooseName(mon.item) : null;
+  state.defender.item = itemKey || mon.item || "";
   state.defender.ability = "";
   if (mon.ability) {
     const abKey = findAbilityKeyLoose(mon.ability);

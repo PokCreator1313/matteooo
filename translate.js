@@ -99,3 +99,17 @@ function findMoveByLooseName(name) {
   if (enKey && CALC_MOVES[MOVE_EN_FR[enKey]]) return MOVE_EN_FR[enKey];
   return null;
 }
+
+// Résout un nom d'objet FR ou EN (export Showdown) vers la clé FR de
+// CALC_ITEMS (158 objets, table ITEM_EN_FR = inverse exact de CALC_ITEMS).
+function findItemByLooseName(name) {
+  if (!name) return null;
+  if (CALC_ITEMS[name]) return name;
+  const t = normC(name);
+  const exact = ITEM_NAMES.find(n => normC(n) === t);
+  if (exact) return exact;
+  if (ITEM_EN_FR[name] && CALC_ITEMS[ITEM_EN_FR[name]]) return ITEM_EN_FR[name];
+  const enKey = Object.keys(ITEM_EN_FR).find(k => normC(k) === t);
+  if (enKey && CALC_ITEMS[ITEM_EN_FR[enKey]]) return ITEM_EN_FR[enKey];
+  return null;
+}
