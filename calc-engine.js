@@ -368,6 +368,143 @@ const ALWAYS_CRIT_MOVES = new Set([
   "Souffle Glacé", "Yama Arashi", "Poing Obscur", "Magie Florale",
 ]);
 
+// ------------------------------------------------------------------
+// Drapeaux de capacités (contact/poing/crocs/onde/son/ball-istique/recul/
+// effet secondaire) nécessaires à l'implémentation de nombreux talents.
+// Noms FR = clés CALC_MOVES. Vérifié via PokeAPI (move_flags/move_meta),
+// avec normalisation d'apostrophes (’ vs ').
+// ------------------------------------------------------------------
+const SOUND_MOVES = new Set([
+  "Bang Sonique", "Bourdon", "Babil", "Vibrécaille", "Dracacophonie",
+  "Confidence", "Voix Enjôleuse", "Écho", "Sort Sinistre", "Siffl'Herbe",
+  "Rugissement", "Glas de Soin", "Grondement", "Mégaphone", "Strido-Son",
+  "Râle Mâle", "Overdrive", "Dernier Mot", "Requiem", "Chant Antique",
+  "Hurlement", "Chant Canon", "Grincement", "Berceuse", "Aboiement",
+  "Ronflement", "Ultrason", "Chant Flamboyant", "Brouhaha", "Voix Envoûtante",
+  "Dissonance Psy", "Aria de l'Écume",
+]);
+
+const CONTACT_MOVES = new Set([
+  "Abattage", "Acrobatie", "Ailes d'Acier", "Ancrage", "Aqua-Brèche", "Aqua-Jet",
+  "Arrogance", "Assurance", "Atout", "Attrition", "Avalanche", "Aéropique",
+  "Balayage", "Balayette", "Ball'Glace", "Bec Vrille", "Big Splash", "Bluff",
+  "Botte Sucrette", "Boutefeu", "Branchicrok", "Bulldoboule", "Bélier", "Cascade",
+  "Casse-Brique", "Cavalerie Lourde", "Cent Rancunes", "Centrifugifle", "Charge", "Charge Foudre",
+  "Choc Météore", "Choc Émotionnel", "Chute Libre", "Claquoir", "Clepto-Mânes", "Close Combat",
+  "Cogne", "Colère", "Combo-Griffe", "Constriction", "Contre", "Coqui-Lame",
+  "Corps Perdu", "Coud'Krâne", "Coup Bas", "Coup Croix", "Coup Double", "Coup Fulgurant",
+  "Coup Varia-Type", "Coup Victoire", "Coup d'Boule", "Coupe", "Croc Fatal", "Croc de Mort",
+  "Crochet Venin", "Crocs Feu", "Crocs Givre", "Crocs Éclair", "Croque Fort", "Cru-Ailes",
+  "Crève-Cœur", "Câlinerie", "Damoclès", "Danse Fleurs", "Dard Mortel", "Dark Lariat",
+  "Demi-Tour", "Dernier Recours", "Direct Toxik", "Double Baffe", "Double Pied", "Double Volée",
+  "Draco-Ascension", "Draco-Charge", "Draco-Griffe", "Draco-Marteau", "Draco-Queue", "Dynamo-Poing",
+  "Eau Revoir", "Effort", "Empal'Korne", "Encornebois", "Escalade", "Escarmouche",
+  "Essorage", "Estocorne", "Exécu-Son", "Faux-Chage", "Façade", "Feinte",
+  "Flying Press", "Force", "Force Poigne", "Forte-Paume", "Fouet Lianes", "Fouet de Feu",
+  "Fourbette", "Fracass'Tête", "Frappe Atlas", "Frotte-Frimousse", "Frustration", "Frénésie",
+  "Furie", "Furie-Bond", "Giga Impact", "Gigotage", "Gliss'Herbe", "Griffe",
+  "Griffe Acier", "Griffe Ombre", "Guillotine", "Gyroballe", "Hantise", "Harcèlement",
+  "Hydro-Queue", "Implore", "Koud'Korne", "Lame Feuille", "Lame Sainte", "Lame Solaire",
+  "Lancécrou", "Larcin", "Ligotage", "Léchouille", "Mach Punch", "Mania",
+  "Marteau de Glace", "Marto-Poing", "Martobois", "Mawashi Geri", "Mitra-Poing", "Morsure",
+  "Mâchouille", "Mégacorne", "Mégafouet", "Métalliroue", "Nitrocharge", "Nœud Herbe",
+  "Ombre Portée", "Patience", "Peignée", "Picore", "Picpic", "Pied Brûleur",
+  "Pied Sauté", "Pied Voltige", "Pika-Piqué", "Pika-Sprint", "Pince-Masse", "Piqûre",
+  "Pisto-Poing", "Plaie Croix", "Plaquage", "Plasma Punch", "Plongée", "Plumo-Queue",
+  "Poing Boost", "Poing Comète", "Poing Dard", "Poing Feu", "Poing Glace", "Poing Karaté",
+  "Poing Météore", "Poing Obscur", "Poing Ombre", "Poing Éclair", "Poison Croix", "Poursuite",
+  "Presse", "Prise de Bec", "Projection", "Psycho-Croc", "Psykoud'Boul", "Punition",
+  "Queue de Fer", "Queue-Poison", "Rapace", "Ravage Rampant", "Rebond", "Représailles",
+  "Retour", "Revenant", "Riposte", "Roue de Feu", "Roulade", "Réveil Forcé",
+  "Sabotage", "Sacrifice", "Souplesse", "Stimulant", "Stratopercut", "Surpuissance",
+  "Tacle Feu", "Tacle Lourd", "Taillade", "Tapotige", "Torgnoles", "Torrent de Coups",
+  "Tour Rapide", "Tranche", "Tranche-Nuit", "Tricherie", "Triple Axel", "Triple Pied",
+  "Troquenard", "Trépignement", "Tunnel", "Tunnelier", "Tête de Fer", "Ultimapoing",
+  "Ultimawashi", "Uppercut", "Vampi-Poing", "Vampibaiser", "Vampirisme", "Vendetta",
+  "Vengeance", "Vif Roc", "Vitesse Extrême", "Vive-Attaque", "Vol", "Yama Arashi",
+  "Éclair Fou", "Éclate Griffe", "Éclate-Roc", "Écras'Face", "Écrasement", "Écrous d'Poing",
+  "Électacle", "Électrikipik", "Étincelle", "Étonnement", "Étreinte", "Évo-Flambo",
+]);
+
+const PUNCH_MOVES = new Set([
+  "Dynamo-Poing", "Mach Punch", "Marteau de Glace", "Marto-Poing", "Mitra-Poing", "Pisto-Poing",
+  "Plasma Punch", "Poing Boost", "Poing Comète", "Poing Feu", "Poing Glace", "Poing Météore",
+  "Poing Obscur", "Poing Ombre", "Poing Éclair", "Stratopercut", "Torrent de Coups", "Ultimapoing",
+  "Uppercut", "Vampi-Poing", "Écrous d'Poing",
+]);
+
+const BITE_MOVES = new Set([
+  "Branchicrok", "Croc de Mort", "Crochet Venin", "Crocs Feu", "Crocs Givre", "Crocs Éclair",
+  "Croque Fort", "Morsure", "Mâchouille", "Psycho-Croc",
+]);
+
+const PULSE_MOVES = new Set([
+  "Aurasphère", "Champlification", "Draco-Choc", "Onde Originelle", "Vibra Soin", "Vibraqua",
+  "Vibrobscur",
+]);
+
+const BALLISTIC_MOVES = new Set([
+  "Aurasphère", "Ball'Brume", "Ball'Glace", "Ball'Météo", "Ball'Ombre", "Balle Graine",
+  "Ballon Brûlant", "Bec-Canon", "Bombe Acide", "Bombe Aimant", "Bombe Beurk", "Bombe Œuf",
+  "Boue-Bombe", "Boule Pollen", "Boule Roc", "Boule Élek", "Canon Graine", "Exploforce",
+  "Gyroballe", "Incendie", "Octazooka", "Pilonnage", "Roc-Boulet", "Éco-Sphère",
+  "Élecanon",
+]);
+
+// Capacités à recul (dégâts subis par l'attaquant proportionnels aux dégâts
+// infligés, y compris le "crash" de Pied Sauté/Pied Voltige en cas d'échec) :
+// boostées par Téméraire (Reckless, +20%). Liste vérifiée via move_meta.csv
+// (PokeAPI) + Bulbapedia (Pied Sauté/Pied Voltige/Métalaser/Herblast absents
+// du champ "drain" de PokeAPI mais bien concernés par Téméraire en jeu).
+const RECOIL_MOVES = new Set([
+  "Bélier", "Damoclès", "Sacrifice", "Électacle", "Boutefeu", "Rapace",
+  "Martobois", "Fracass'Tête", "Peignée", "Lumière du Néant", "Éclair Fou",
+  "Pied Sauté", "Pied Voltige", "Métalaser", "Herblast",
+]);
+
+// Capacités avec un effet secondaire (chance de statut/stat/flinch, y compris
+// les effets garantis comme la baisse de stat de Surchauffe/Draco-Météore) :
+// boostées par Sans Limite (Sheer Force, +30%, effet secondaire supprimé).
+// Liste vérifiée via move_meta.csv (PokeAPI, champ effect_chance non nul).
+const SECONDARY_EFFECT_MOVES = new Set([
+  "Abattage", "Aboiement", "Acide", "Acide Malique", "Ailes d'Acier", "Anti-Air",
+  "Aqua-Brèche", "Babil", "Balayette", "Ball'Brume", "Ball'Ombre", "Ballon Brûlant",
+  "Blizzard", "Bluff", "Bombe Acide", "Bombe Beurk", "Botte Sucrette", "Boue-Bombe",
+  "Bourdon", "Boutefeu", "Bulldoboule", "Bulles d'O", "Camaraderie", "Canicule",
+  "Canon Floral", "Cascade", "Chant Antique", "Charge Foudre", "Choc Mental", "Choc Émotionnel",
+  "Chute Glace", "Claquoir", "Close Combat", "Coaching", "Confidence", "Constriction",
+  "Coqui-Lame", "Coud'Boue", "Coud'Krâne", "Coup Fulgurant", "Coup Victoire", "Coup d'Boule",
+  "Coup d'Jus", "Cradovague", "Croc de Mort", "Crochet Venin", "Crocs Feu", "Crocs Givre",
+  "Crocs Éclair", "Crève-Cœur", "Câlinerie", "Danse Flammes", "Danse du Feu", "Dard-Venin",
+  "Dernier Mot", "Direct Toxik", "Double Dard", "Dracacophonie", "Draco-Ascension", "Draco-Charge",
+  "Draco-Météore", "Draco-Souffle", "Dynamo-Poing", "Déflagration", "Détricanon", "Détritus",
+  "Escalade", "Exploforce", "Explonuit", "Extrasenseur", "Exécu-Son", "Fatal-Foudre",
+  "Fertilisation", "Feu Ensorcelé", "Feu Envieux", "Feu Glacé", "Feu Sacré", "Feu d'Enfer",
+  "Fil Toxique", "Flamme Bleue", "Flammèche", "Force Cachée", "Force G", "Forte-Paume",
+  "Fouet de Feu", "Frotte-Frimousse", "Fulmigraine", "Fureur Ardente", "Furie Dimension", "Furie-Bond",
+  "Garde Florale", "Garde-à-Joues", "Goudronnage", "Griffe Acier", "Groz'Yeux", "Harcèlement",
+  "Incendie", "Jet de Vapeur", "Kokiyarme", "Lame d'Air", "Lance-Flammes", "Larme à l'Œil",
+  "Laser Glace", "Laser Météore", "Ligotage", "Lumi-Éclat", "Luminocanon", "Lyophilisation",
+  "Léchouille", "Marteau de Glace", "Marto-Poing", "Massd'Os", "Mawashi Geri", "Miroi-Tir",
+  "Morsure", "Myria-Flèches", "Mâchouille", "Nappage", "Nitrocharge", "Ocroupi",
+  "Octazooka", "Onde Boréale", "Orage Adamantin", "Os Ombre", "Ouragan", "Phytomixeur",
+  "Pied Brûleur", "Pika-Piqué", "Pika-Splash", "Pika-Sprint", "Piqué", "Piège de Venin",
+  "Piétisol", "Plaquage", "Poing Boost", "Poing Dard", "Poing Feu", "Poing Glace",
+  "Poing Météore", "Poing Éclair", "Poison Croix", "Poudreuse", "Pouvoir Antique", "Pouvoir Lunaire",
+  "Psycho-Boost", "Psyko", "Psykoud'Boul", "Purédpois", "Queue de Fer", "Queue-Poison",
+  "Rafale Psy", "Ravage Rampant", "Rayon Chargé", "Rayon Signal", "Rebond", "Regard Glaçant",
+  "Ronflement", "Roue Libre", "Roue de Feu", "Râle Mâle", "Sable Ardent", "Siphon",
+  "Souffle Glacé", "Surchauffe", "Surpuissance", "Survinsecte", "Tambour Battant", "Telluriforce",
+  "Tempête Verte", "Tir de Boue", "Toile Élek", "Tomberoche", "Tonnerre", "Tour Rapide",
+  "Tourbi-Sable", "Triplattaque", "Troquenard", "Tête de Fer", "Ultime Bastion", "Uppercut",
+  "Vapeur Féérique", "Vent Argenté", "Vent Glace", "Vent Mauvais", "Vent Violent", "Vibraqua",
+  "Vibrobscur", "Vibrécaille", "Vole-Force", "Voltageôle", "Vortex Magma", "Ère Glaciaire",
+  "Éboulement", "Ébullilave", "Ébullition", "Éclair", "Éclair Gelé", "Éclate Griffe",
+  "Éclate-Roc", "Éco-Sphère", "Écrasement", "Écrous d'Poing", "Écume", "Élecanon",
+  "Électacle", "Électrikipik", "Étincelle", "Étonnement", "Étreinte", "Évo-Dynamo",
+  "Évo-Flambo", "Évo-Écolo",
+]);
+
 function powerByWeightTarget(kg) {
   if (kg == null) return null;
   if (kg < 10) return 20;
@@ -445,7 +582,8 @@ function checkImmunity(moveType, defAbilityId, defTypes, defItemEn, moveName) {
   if (defAbilityId === "SAP_SIPPER" && t === "Plante") return true;
   if (defAbilityId === "STORM_DRAIN" && t === "Eau") return true;
   if (defAbilityId === "LIGHTNING_ROD" && t === "Electrik") return true;
-  if (defAbilityId === "SOUNDPROOF") return false; // dépend de la capacité (son), non modélisé
+  if (defAbilityId === "SOUNDPROOF" && SOUND_MOVES.has(moveName)) return true;
+  if (defAbilityId === "BULLETPROOF" && BALLISTIC_MOVES.has(moveName)) return true;
   return false;
 }
 
@@ -703,23 +841,29 @@ function computeDamage(opts) {
     }
   }
   // Hydrata-Son (Liquid Voice) : les capacités à son deviennent de type Eau
-  // (pas de bonus de puissance, contrairement à la famille "-ate").
-  const SOUND_MOVES = new Set([
-    "Bang Sonique", "Bourdon", "Babil", "Vibrécaille", "Dracacophonie",
-    "Confidence", "Voix Enjôleuse", "Écho", "Sort Sinistre", "Siffl'Herbe",
-    "Rugissement", "Glas de Soin", "Grondement", "Mégaphone", "Strido-Son",
-    "Râle Mâle", "Overdrive", "Dernier Mot", "Requiem", "Chant Antique",
-    "Hurlement", "Chant Canon", "Grincement", "Berceuse", "Aboiement",
-    "Ronflement", "Ultrason", "Chant Flamboyant", "Brouhaha", "Voix Envoûtante",
-    "Dissonance Psy", "Aria de l'Écume",
-  ]);
+  // (pas de bonus de puissance, contrairement à la famille "-ate"). SOUND_MOVES
+  // est désormais déclaré au niveau supérieur du fichier (nécessaire pour
+  // checkImmunity/Anti-Bruit et pour Punk Rock/Prognathe côté attaque/défense).
   if (atkAbilityId === "LIQUID_VOICE" && SOUND_MOVES.has(move.name) && move.type !== "Eau") {
     move.type = "Eau";
     notes.push("Hydrata-Son : capacité à son devient de type Eau.");
   }
 
   const defTypes = defSpecies.types;
-  const atkTypes = atkSpecies.types;
+  let atkTypes = atkSpecies.types;
+
+  // Multi-Type (Arceus) / Système Alpha (RKS System, Silvally) : le type du
+  // porteur devient celui de la Plaque/ROM tenue (reste Normal sans objet
+  // correspondant, comme stocké par défaut dans CALC_SPECIES) — affecte le STAB.
+  if ((atkAbilityId === "MULTITYPE" || atkAbilityId === "RKS_SYSTEM") && atkItemEn) {
+    const plateType = Object.keys(PLATE_TYPES).find(t => PLATE_TYPES[t] === atkItemEn);
+    const memoryType = Object.keys(MEMORY_TYPES).find(t => MEMORY_TYPES[t] === atkItemEn);
+    const newType = atkAbilityId === "MULTITYPE" ? plateType : memoryType;
+    if (newType) {
+      atkTypes = [newType];
+      notes.push(`${abilityFrNameById(atkAbilityId)} : type du porteur = ${newType} (objet tenu).`);
+    }
+  }
 
   if (checkImmunity(move.type, defAbilityId, defTypes, defItemEn, move.name)) {
     const reason = defItemEn === "Air Balloon" ? `${defItem} annule l'attaque (immunité Sol).` : `${abilityFrNameById(defAbilityId)} annule l'attaque.`;
@@ -742,8 +886,22 @@ function computeDamage(opts) {
     effectiveness = groundedTypes.length ? typeMultiplier(move.type, groundedTypes) : 1;
     notes.push("Myria-Flèches : touche normalement les Pokémon Vol/Lévitation/Ballon d'Air (ancrés au sol).");
   }
+  // Querelleur (Scrappy) : touche normalement les Spectre avec des capacités
+  // Normal/Combat (comme si l'immunité de type n'existait pas).
+  if ((move.type === "Normal" || move.type === "Combat") && atkAbilityId === "SCRAPPY" && defTypes.includes("Spectre")) {
+    const noGhostTypes = defTypes.filter(t => t !== "Spectre");
+    effectiveness = noGhostTypes.length ? typeMultiplier(move.type, noGhostTypes) : 1;
+    notes.push("Querelleur : touche normalement les Spectre avec une capacité Normal/Combat.");
+  }
   if (effectiveness === 0) {
     return { immune: true, rolls: [0], min: 0, max: 0, minPct: 0, maxPct: 0, notes: ["Immunité de type."] };
+  }
+
+  // Garde Mystik (Wonder Guard) : immunise contre toute capacité qui n'est
+  // pas super efficace (peu importe la catégorie), y compris les capacités à
+  // dégâts fixes/directs (mécanique officielle depuis la Gen 4).
+  if (defAbilityId === "WONDER_GUARD" && effectiveness <= 1) {
+    return { immune: true, rolls: [0], min: 0, max: 0, minPct: 0, maxPct: 0, notes: ["Garde Mystik : immunisé (capacité pas super efficace)."] };
   }
 
   // Capacités à dégâts fixes/directs (K.O. Direct, Draco-Rage, Frappe Atlas,
@@ -825,6 +983,32 @@ function computeDamage(opts) {
   let atkStage = atkStagesSource[atkStageKey] || 0;
   let defStage = dstages[defStageKey] || 0;
 
+  // Talents qui augmentent automatiquement une stat à l'entrée en combat
+  // (mécanique officielle, supposée non déjà "consommée" au moment du calcul) :
+  // Lame Indomptable (+1 Attaque), Égide Inflexible (+1 Défense). Ne
+  // s'appliquent que si la stat concernée est bien celle utilisée par cette
+  // capacité (pas Damoclès/Tricherie côté attaque, pas Choc Psy côté défense).
+  if (!atkUsesDef && !atkUsesTargetAtk && atkStageKey === "atk" && atkAbilityId === "INTREPID_SWORD") {
+    atkStage += 1;
+    notes.push("Lame Indomptable (+1 Attaque, entrée en combat).");
+  }
+  if (defStageKey === "def" && defAbilityId === "DAUNTLESS_SHIELD") {
+    defStage += 1;
+    notes.push("Égide Inflexible (+1 Défense, entrée en combat).");
+  }
+
+  // Télécharge (Download) : à l'entrée en combat, +1 Attaque si la Défense de
+  // la cible est inférieure ou égale à sa Défense Spéciale, sinon +1 Att. Spé.
+  // (utilise les stats de base du défenseur, sans ses propres modificateurs
+  // de palier, comme au moment de l'entrée en combat).
+  if (!atkUsesDef && !atkUsesTargetAtk && atkAbilityId === "DOWNLOAD") {
+    const downloadStat = defStats.def <= defStats.spd ? "atk" : "spa";
+    if (atkStageKey === downloadStat) {
+      atkStage += 1;
+      notes.push(`Télécharge (+1 ${downloadStat === "atk" ? "Attaque" : "Attaque Spéciale"}, entrée en combat).`);
+    }
+  }
+
   // Intimidation (côté défenseur) : abaisse l'Attaque (physique) de
   // l'attaquant de 1 palier à l'entrée en combat du défenseur. Ne s'applique
   // qu'à la propre stat d'Attaque de l'attaquant (pas Damoclès/Tricherie).
@@ -872,6 +1056,20 @@ function computeDamage(opts) {
     }
   }
 
+  // Inconscient (Unaware) : ignore les modifications de stat de l'AUTRE
+  // Pokémon lors du calcul de dégâts, peu importe leur origine (Intimidation,
+  // baies, etc.) — mécanique officielle. Encornebois : côté attaquant ignore
+  // les paliers Déf/Déf.Spé de la cible ; côté défenseur ignore les paliers
+  // Attaque/Att.Spé de l'attaquant.
+  if (atkAbilityId === "UNAWARE" && !atkUsesDef) {
+    defStage = 0;
+    notes.push("Inconscient : ignore les modifications de Défense/Déf. Spé. de la cible.");
+  }
+  if (defAbilityId === "UNAWARE" && !atkUsesTargetAtk) {
+    atkStage = 0;
+    notes.push("Inconscient (cible) : ignore les modifications d'Attaque/Att. Spé. de l'attaquant.");
+  }
+
   let atkStat = applyStage(atkStatsSource[atkStageKey], atkStage);
   let defStat = applyStage(defStats[defStageKey], defStage);
 
@@ -891,6 +1089,23 @@ function computeDamage(opts) {
   if (usesOwnOffensiveStat && isPhysical && atkAbilityId === "GUTS" && attacker.status) {
     atkStat = Math.floor(atkStat * 1.5);
     notes.push("Cran (+50% Attaque car statut).");
+  }
+  if (usesOwnOffensiveStat && isPhysical && atkAbilityId === "TOXIC_BOOST" && (attacker.status === "poison" || attacker.status === "poison_grave")) {
+    atkStat = Math.floor(atkStat * 1.5);
+    notes.push("Rage Poison (+50% Attaque, empoisonné).");
+  }
+  if (usesOwnOffensiveStat && !isPhysical && atkAbilityId === "FLARE_BOOST" && attacker.status === "brulure") {
+    atkStat = Math.floor(atkStat * 1.5);
+    notes.push("Rage Brûlure (+50% Att. Spé, brûlé).");
+  }
+  // Défaitiste (Defeatist) : Attaque et Att. Spé divisées par 2 dès que les
+  // PV actuels de l'attaquant sont ≤ 50% de ses PV max.
+  if (usesOwnOffensiveStat && atkAbilityId === "DEFEATIST") {
+    const atkHpPctDefeatist = attacker.currentHp != null ? (100 * atkCurrentHp / atkStats.hp) : (attacker.lowHp ? 25 : 100);
+    if (atkHpPctDefeatist <= 50) {
+      atkStat = Math.floor(atkStat / 2);
+      notes.push("Défaitiste (Attaque/Att. Spé divisées par 2, PV ≤ 50%).");
+    }
   }
 
   // Objets qui doublent une stat pour une espèce précise (Masse Os,
@@ -960,6 +1175,12 @@ function computeDamage(opts) {
     notes.push("Neige (+50% Défense, type Glace).");
   }
 
+  // Toison Herbue (Grass Pelt) : +50% Défense sous Champ Herbu.
+  if (field.terrain === "herbu" && defStageKey === "def" && defAbilityId === "GRASS_PELT") {
+    defStat = Math.floor(defStat * 1.5);
+    notes.push("Toison Herbue (+50% Défense, terrain herbu).");
+  }
+
   // Mécanique propre à Run & Bun : Destruction/Explosion/Explo-Brume
   // divisent par 2 la stat défensive du Pokémon touché lors du calcul des
   // dégâts (appliqué en dernier, sur la valeur finale de la stat).
@@ -1017,20 +1238,28 @@ function computeDamage(opts) {
 
   // Critique
   let critMult = 1;
+  // Cruauté (Merciless) : coup critique garanti si la cible est empoisonnée.
+  const mercilessCrit = atkAbilityId === "MERCILESS" && (defender.status === "poison" || defender.status === "poison_grave");
   if (field.crit) {
     critMult = (atkAbilityId === "SNIPER") ? 2.25 : 1.5;
     notes.push(`Coup critique (x${critMult}).`);
   } else if (ALWAYS_CRIT_MOVES.has(move.name)) {
     critMult = (atkAbilityId === "SNIPER") ? 2.25 : 1.5;
     notes.push(`${move.name} : coup critique garanti (x${critMult}).`);
+  } else if (mercilessCrit) {
+    critMult = (atkAbilityId === "SNIPER") ? 2.25 : 1.5;
+    notes.push(`Cruauté : coup critique garanti (cible empoisonnée) (x${critMult}).`);
   }
 
-  // STAB
+  // STAB — Protéen/Libéro forcent le STAB (le porteur change temporairement
+  // de type pour correspondre à celui de la capacité utilisée).
   let stab = 1;
-  const hasStab = atkTypes.includes(move.type);
+  const nativeStab = atkTypes.includes(move.type);
+  const forcedStab = !nativeStab && (atkAbilityId === "PROTEAN" || atkAbilityId === "LIBERO");
+  const hasStab = nativeStab || forcedStab;
   if (hasStab) {
     stab = (atkAbilityId === "ADAPTABILITY") ? 2 : 1.5;
-    notes.push(atkAbilityId === "ADAPTABILITY" ? "STAB Adaptabilité (x2)." : "STAB (x1.5).");
+    notes.push(atkAbilityId === "ADAPTABILITY" ? "STAB Adaptabilité (x2)." : (forcedStab ? `STAB (${abilityFrNameById(atkAbilityId)} : devient temporairement du type ${move.type}).` : "STAB (x1.5)."));
   }
 
   // Talents bas-PV (Blaze/Torrent/Overgrow/Swarm) — déduits des PV actuels si fournis
@@ -1042,6 +1271,21 @@ function computeDamage(opts) {
     mult *= 1.5;
     notes.push(`${abilityFrNameById(atkAbilityId)} (PV bas, +50% capacité du même type).`);
   }
+
+  // Talents boostant selon le "drapeau" de la capacité (contact/poing/crocs/
+  // onde/son/recul) ou selon la puissance/le type. Vérifié via PokeAPI
+  // (move_flags/move_meta) + Bulbapedia pour les valeurs de boost.
+  if (atkAbilityId === "TOUGH_CLAWS" && CONTACT_MOVES.has(move.name)) { mult *= 1.3; notes.push("Griffe Dure (+30%, capacité de contact)."); }
+  if (atkAbilityId === "IRON_FIST" && PUNCH_MOVES.has(move.name)) { mult *= 1.2; notes.push("Poing de Fer (+20%, capacité de poing)."); }
+  if (atkAbilityId === "STRONG_JAW" && BITE_MOVES.has(move.name)) { mult *= 1.5; notes.push("Prognathe (+50%, capacité de crocs)."); }
+  if (atkAbilityId === "MEGA_LAUNCHER" && PULSE_MOVES.has(move.name)) { mult *= 1.5; notes.push("Méga Blaster (+50%, capacité à onde)."); }
+  if (atkAbilityId === "PUNK_ROCK" && SOUND_MOVES.has(move.name)) { mult *= 1.3; notes.push("Punk Rock (+30%, capacité à son)."); }
+  if (atkAbilityId === "SHEER_FORCE" && SECONDARY_EFFECT_MOVES.has(move.name)) { mult *= 1.3; notes.push("Sans Limite (+30%, capacité à effet secondaire, effet annulé)."); }
+  if (atkAbilityId === "TECHNICIAN" && move.power <= 60) { mult *= 1.5; notes.push("Technicien (+50%, puissance ≤ 60)."); }
+  if (atkAbilityId === "RECKLESS" && RECOIL_MOVES.has(move.name)) { mult *= 1.2; notes.push("Téméraire (+20%, capacité à recul)."); }
+  if ((atkAbilityId === "STEELWORKER" || atkAbilityId === "STEELY_SPIRIT") && move.type === "Acier") { mult *= 1.5; notes.push(`${abilityFrNameById(atkAbilityId)} (+50%, capacité Acier).`); }
+  if (atkAbilityId === "DRAGONS_MAW" && move.type === "Dragon") { mult *= 1.5; notes.push("Dent de Dragon (+50%, capacité Dragon)."); }
+  if (atkAbilityId === "TRANSISTOR" && move.type === "Electrik") { mult *= 1.3; notes.push("Transistor (+30%, capacité Electrik)."); }
 
   // Efficacité de type
   mult *= effectiveness;
@@ -1057,8 +1301,29 @@ function computeDamage(opts) {
     mult *= 0.75;
     notes.push(`${abilityFrNameById(defAbilityId)} (-25%, super efficace).`);
   }
+  if (effectiveness > 1 && atkAbilityId === "NEUROFORCE") {
+    mult *= 1.25;
+    notes.push("Cérébro-Force (+25%, super efficace).");
+  }
   if (effectiveness > 0 && effectiveness < 1 && atkAbilityId === "TINTED_LENS") {
     // déjà géré ci-dessus (couvre 0.5, 0.25...)
+  }
+
+  // Aura Ténébreuse/Aura Féérique : +33% aux capacités Ténèbres/Fée infligées
+  // par N'IMPORTE QUEL Pokémon sur le terrain (attaquant OU défenseur, peu
+  // importe qui possède le talent) — sauf si Aura Inversée (Aura Break) est
+  // aussi présente, auquel cas l'effet devient -25% au lieu de +33%
+  // (mécanique officielle).
+  const darkAuraActive = atkAbilityId === "DARK_AURA" || defAbilityId === "DARK_AURA";
+  const fairyAuraActive = atkAbilityId === "FAIRY_AURA" || defAbilityId === "FAIRY_AURA";
+  const auraBreakActive = atkAbilityId === "AURA_BREAK" || defAbilityId === "AURA_BREAK";
+  if (darkAuraActive && move.type === "Tenebres") {
+    mult *= auraBreakActive ? 0.75 : 1.33;
+    notes.push(`Aura Ténébreuse${auraBreakActive ? " + Aura Inversée" : ""} (${auraBreakActive ? "-25%" : "+33%"}, capacité Ténèbres).`);
+  }
+  if (fairyAuraActive && move.type === "Fee") {
+    mult *= auraBreakActive ? 0.75 : 1.33;
+    notes.push(`Aura Féérique${auraBreakActive ? " + Aura Inversée" : ""} (${auraBreakActive ? "-25%" : "+33%"}, capacité Fée).`);
   }
 
   // Baie résistance du défenseur : -50% si le coup est super efficace et
@@ -1081,6 +1346,49 @@ function computeDamage(opts) {
     notes.push("Isograisse (-50%, Feu/Glace).");
   }
 
+  // Toison Épaisse (Fur Coat) : -50% dégâts des capacités physiques subies.
+  if (defAbilityId === "FUR_COAT" && isPhysical) {
+    mult *= 0.5;
+    notes.push("Toison Épaisse (-50%, capacité physique).");
+  }
+  // Écailles Glacées (Ice Scales) : -50% dégâts des capacités spéciales subies.
+  if (defAbilityId === "ICE_SCALES" && !isPhysical) {
+    mult *= 0.5;
+    notes.push("Écailles Glacées (-50%, capacité spéciale).");
+  }
+  // Ignifugé (Heatproof) : -50% dégâts Feu subis (physique et spécial).
+  if (defAbilityId === "HEATPROOF" && move.type === "Feu") {
+    mult *= 0.5;
+    notes.push("Ignifugé (-50%, capacité Feu).");
+  }
+  // Aquabulle (Water Bubble) : double les dégâts Eau infligés par le porteur,
+  // réduit de 50% les dégâts Feu subis.
+  if (atkAbilityId === "WATER_BUBBLE" && move.type === "Eau") {
+    mult *= 2;
+    notes.push("Aquabulle (+100%, capacité Eau).");
+  }
+  if (defAbilityId === "WATER_BUBBLE" && move.type === "Feu") {
+    mult *= 0.5;
+    notes.push("Aquabulle (-50%, capacité Feu).");
+  }
+  // Boule de Poils (Fluffy) : -50% dégâts des capacités de contact, mais
+  // +100% dégâts des capacités Feu (les deux effets peuvent se cumuler).
+  if (defAbilityId === "FLUFFY") {
+    if (CONTACT_MOVES.has(move.name)) { mult *= 0.5; notes.push("Boule de Poils (-50%, capacité de contact)."); }
+    if (move.type === "Feu") { mult *= 2; notes.push("Boule de Poils (+100%, capacité Feu)."); }
+  }
+  // Punk Rock (défense) : -50% dégâts des capacités à son subies.
+  if (defAbilityId === "PUNK_ROCK" && SOUND_MOVES.has(move.name)) {
+    mult *= 0.5;
+    notes.push("Punk Rock (-50%, capacité à son).");
+  }
+  // Peau Sèche (Dry Skin) : +25% dégâts Feu subis (en plus de l'immunité Eau
+  // déjà gérée par checkImmunity).
+  if (defAbilityId === "DRY_SKIN" && move.type === "Feu") {
+    mult *= 1.25;
+    notes.push("Peau Sèche (+25%, capacité Feu).");
+  }
+
   // Brûlure (attaquant physique, sans Cran, hors Façade qui ignore
   // explicitement le malus de brûlure)
   if (isPhysical && attacker.status === "brulure" && atkAbilityId !== "GUTS" && norm(move.name || "") !== norm("Façade")) {
@@ -1088,8 +1396,9 @@ function computeDamage(opts) {
     notes.push("Brûlure (-50% dégâts physiques).");
   }
 
-  // Écrans (ignorés si critique)
-  if (!field.crit && !alwaysCrit) {
+  // Écrans (ignorés si critique, ou si l'attaquant a Infiltration qui les
+  // traverse toujours)
+  if (!field.crit && !alwaysCrit && atkAbilityId !== "INFILTRATOR") {
     if (field.auroraveil) { mult *= 0.5; notes.push("Voile Aurore (-50%)."); }
     else if (isPhysical && field.reflect) { mult *= 0.5; notes.push("Protection (-50% Physique)."); }
     else if (!isPhysical && field.lightscreen) { mult *= 0.5; notes.push("Mur Lumière (-50% Spéciale)."); }
